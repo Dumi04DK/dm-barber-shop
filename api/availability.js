@@ -1,29 +1,33 @@
-const { getStore } = require("@netlify/blobs");
 const { SHOP, SERVICES, BARBERS } = require("../lib/data");
 const { candidateTimes, isAfterHours, hasConflict, minutesToTime, isValidDateString } = require("../lib/slots");
+const { getBookingsForDate } = require("../lib/store");
 
-exports.handler = async (event) => {
-  const { date, serviceId, barberId } = event.queryStringParameters || {};
+module.exports = async (req, res) => {
+  const { date, serviceId, barberId } = req.query || {};
 
   if (!date || !isValidDateString(date)) {
-    return json(400, { error: "A valid date (YYYY-MM-DD) is required." });
+    return res.status(400).json({ error: "A valid date (YYYY-MM-DD) is required." });
   }
   const service = SERVICES.find((s) => s.id === serviceId);
   if (!service) {
-    return json(400, { error: "Unknown service." });
+    return res.status(400).json({ error: "Unknown service." });
   }
   const barber = barberId && barberId !== "any" ? BARBERS.find((b) => b.id === barberId) : null;
   if (barberId && barberId !== "any" && !barber) {
-    return json(400, { error: "Unknown barber." });
+    return res.status(400).json({ error: "Unknown barber." });
   }
 
   const { closed, reason, times } = candidateTimes(date, service.duration);
   if (closed) {
-    return json(200, { closed: true, reason, slots: [] });
+    return res.status(200).json({ closed: true, reason, slots: [] });
   }
 
-  const store = getStore("bookings");
-  const existingBookings = (await store.get(date, { type: "json" })) || [];
+  let existingBookings;
+  try {
+    existingBookings = await getBookingsForDate(date);
+  } catch (e) {
+    return res.status(503).json({ error: e.message });
+  }
 
   const slots = times.map((t) => {
     const afterHours = isAfterHours(date, t, service.duration);
@@ -46,13 +50,6 @@ exports.handler = async (event) => {
     };
   });
 
-  return json(200, { closed: false, reason: null, slots });
+  res.setHeader("Cache-Control", "no-store");
+  res.status(200).json({ closed: false, reason: null, slots });
 };
-
-function json(statusCode, body) {
-  return {
-    statusCode,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-    body: JSON.stringify(body),
-  };
-}

@@ -4,7 +4,7 @@ const path = require("path");
 const EXE = "C:\\Users\\Akonisaho\\AppData\\Local\\ms-playwright\\chromium-1234\\chrome-win64\\chrome.exe";
 const OUT = path.join(__dirname, "shots");
 require("fs").mkdirSync(OUT, { recursive: true });
-const BASE = "http://localhost:5501";
+const BASE = "http://localhost:5502";
 
 function nextWeekdayISO(targetDow) {
   const d = new Date();

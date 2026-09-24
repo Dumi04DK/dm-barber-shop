@@ -1,26 +1,28 @@
-const { getStore } = require("@netlify/blobs");
 const { SERVICES, BARBERS } = require("../lib/data");
+const { listAllBookings } = require("../lib/store");
 
-exports.handler = async (event) => {
+module.exports = async (req, res) => {
   const adminKey = process.env.ADMIN_KEY;
   if (!adminKey) {
-    return json(503, { error: "Admin access isn't configured yet. Set the ADMIN_KEY environment variable in Netlify." });
+    return res.status(503).json({ error: "Admin access isn't configured yet. Set the ADMIN_KEY environment variable in Vercel." });
   }
 
-  const providedKey = (event.queryStringParameters || {}).key || (event.headers || {})["x-admin-key"];
+  const providedKey = (req.query || {}).key || req.headers["x-admin-key"];
   if (!providedKey || providedKey !== adminKey) {
-    return json(401, { error: "Invalid or missing admin key." });
+    return res.status(401).json({ error: "Invalid or missing admin key." });
   }
-
-  const store = getStore("bookings");
-  const { blobs } = await store.list();
 
   const serviceById = Object.fromEntries(SERVICES.map((s) => [s.id, s]));
   const barberById = Object.fromEntries(BARBERS.map((b) => [b.id, b]));
 
+  let byDate;
+  try {
+    byDate = await listAllBookings();
+  } catch (e) {
+    return res.status(503).json({ error: e.message });
+  }
   const all = [];
-  for (const { key: date } of blobs) {
-    const bookings = (await store.get(date, { type: "json" })) || [];
+  for (const { bookings } of byDate) {
     for (const b of bookings) {
       const basePrice = serviceById[b.serviceId] ? serviceById[b.serviceId].price : null;
       all.push({
@@ -44,13 +46,6 @@ exports.handler = async (event) => {
 
   all.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 
-  return json(200, { bookings: all });
+  res.setHeader("Cache-Control", "no-store");
+  res.status(200).json({ bookings: all });
 };
-
-function json(statusCode, body) {
-  return {
-    statusCode,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-    body: JSON.stringify(body),
-  };
-}

@@ -1,6 +1,6 @@
-// Local-only dev server for manual/browser testing without the Netlify platform.
+// Local-only dev server for manual/browser testing without Vercel.
 // Serves the static site and proxies /api/* to the real function handlers,
-// backed by an in-memory stand-in for @netlify/blobs. Not used in production.
+// backed by an in-memory stand-in for @upstash/redis. Not used in production.
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -8,37 +8,37 @@ const { URL } = require("url");
 
 const Module = require("module");
 const originalRequire = Module.prototype.require;
-const buckets = new Map();
-const fakeBlobs = {
-  getStore(name) {
-    return {
-      async get(key, opts) {
-        const bucket = buckets.get(name) || {};
-        const val = bucket[key];
-        if (val === undefined) return null;
-        return opts && opts.type === "json" ? JSON.parse(val) : val;
-      },
-      async setJSON(key, value) {
-        const bucket = buckets.get(name) || {};
-        bucket[key] = JSON.stringify(value);
-        buckets.set(name, bucket);
-      },
-      async list() {
-        const bucket = buckets.get(name) || {};
-        return { blobs: Object.keys(bucket).map((k) => ({ key: k })) };
-      },
-    };
-  },
-};
+const store = new Map();
+
+class FakeRedis {
+  async get(key) {
+    return store.has(key) ? store.get(key) : null;
+  }
+  async set(key, value) {
+    store.set(key, value);
+    return "OK";
+  }
+  async keys(pattern) {
+    const prefix = pattern.replace(/\*$/, "");
+    return [...store.keys()].filter((k) => k.startsWith(prefix));
+  }
+}
+
+const fakeUpstash = { Redis: { fromEnv: () => new FakeRedis() } };
+
 Module.prototype.require = function (id) {
-  if (id === "@netlify/blobs") return fakeBlobs;
+  if (id === "@upstash/redis") return fakeUpstash;
   return originalRequire.apply(this, arguments);
 };
 
-const catalogFn = require("../netlify/functions/catalog");
-const availabilityFn = require("../netlify/functions/availability");
-const bookFn = require("../netlify/functions/book");
-const adminBookingsFn = require("../netlify/functions/admin-bookings");
+// store.js checks for these directly before calling Redis.fromEnv() (which is mocked above).
+process.env.UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL || "http://fake.local";
+process.env.UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "fake-token";
+
+const catalogFn = require("../api/catalog");
+const availabilityFn = require("../api/availability");
+const bookFn = require("../api/book");
+const adminBookingsFn = require("../api/admin-bookings");
 
 process.env.ADMIN_KEY = process.env.ADMIN_KEY || "localtest";
 
@@ -64,30 +64,45 @@ function readBody(req) {
   });
 }
 
+function makeRes(res) {
+  let statusCode = 200;
+  return {
+    setHeader: (k, v) => res.setHeader(k, v),
+    status(code) {
+      statusCode = code;
+      return this;
+    },
+    json(obj) {
+      res.writeHead(statusCode, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(obj));
+    },
+  };
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
 
   if (url.pathname.startsWith("/api/")) {
-    const qs = Object.fromEntries(url.searchParams.entries());
-    let result;
+    const query = Object.fromEntries(url.searchParams.entries());
+    const vercelRes = makeRes(res);
     try {
       if (url.pathname === "/api/catalog") {
-        result = await catalogFn.handler({});
+        await catalogFn({ query, method: req.method, headers: req.headers }, vercelRes);
       } else if (url.pathname === "/api/availability") {
-        result = await availabilityFn.handler({ queryStringParameters: qs });
+        await availabilityFn({ query, method: req.method, headers: req.headers }, vercelRes);
       } else if (url.pathname === "/api/book") {
-        const body = await readBody(req);
-        result = await bookFn.handler({ httpMethod: "POST", body });
+        const raw = await readBody(req);
+        let body = {};
+        try { body = JSON.parse(raw || "{}"); } catch { /* leave empty */ }
+        await bookFn({ query, method: req.method, headers: req.headers, body }, vercelRes);
       } else if (url.pathname === "/api/admin-bookings") {
-        result = await adminBookingsFn.handler({ queryStringParameters: qs, headers: req.headers });
+        await adminBookingsFn({ query, method: req.method, headers: req.headers }, vercelRes);
       } else {
-        result = { statusCode: 404, body: JSON.stringify({ error: "Unknown API route" }) };
+        vercelRes.status(404).json({ error: "Unknown API route" });
       }
     } catch (e) {
-      result = { statusCode: 500, body: JSON.stringify({ error: e.message }) };
+      vercelRes.status(500).json({ error: e.message });
     }
-    res.writeHead(result.statusCode, { "Content-Type": "application/json" });
-    res.end(result.body);
     return;
   }
 
