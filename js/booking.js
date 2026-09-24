@@ -28,6 +28,7 @@
     afterHoursFee: 0,
     slotsByHour: null, // { "06": [{time, available, afterHours, fee, resolvedBarberId}, ...], ... }
     selectedHour: null,
+    timeAvailable: true,
   };
 
   var todayStr = new Date().toISOString().slice(0, 10);
@@ -114,10 +115,52 @@
     });
   }
 
+  var WHEEL_ITEM_H = 44;
+
+  // Attaches center-snap-wheel behaviour: whichever item is centered as the
+  // user scrolls becomes selected live (onChange), and settles into a
+  // committed value shortly after scrolling stops (onSettle) — the same
+  // interaction as a native iOS/Android time picker.
+  function attachWheel(wheelEl, count, onChange, onSettle) {
+    function centeredIndex() {
+      var idx = Math.round(wheelEl.scrollTop / WHEEL_ITEM_H);
+      return Math.max(0, Math.min(count - 1, idx));
+    }
+    var lastIdx = -1;
+    var settleTimer = null;
+    wheelEl.addEventListener("scroll", function () {
+      var idx = centeredIndex();
+      if (idx !== lastIdx) {
+        lastIdx = idx;
+        onChange(idx);
+      }
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(function () { onSettle(centeredIndex()); }, 130);
+    });
+  }
+
+  function scrollWheelTo(wheelEl, index, smooth) {
+    wheelEl.scrollTo({ top: index * WHEEL_ITEM_H, behavior: smooth ? "smooth" : "auto" });
+  }
+
+  function updateAvailabilityWarning() {
+    if (!state.time) return;
+    if (!state.timeAvailable) {
+      slotStatus.textContent = "That exact time is already booked. Scroll to another minute, hour, or try a different barber.";
+      slotStatus.classList.add("is-warning");
+    } else {
+      slotStatus.textContent = state.baseHint || "";
+      slotStatus.classList.remove("is-warning");
+    }
+  }
+
   function refreshSlots() {
     if (!hourWheel) return;
     state.slotsByHour = null;
     state.selectedHour = null;
+    state.time = null;
+    state.timeAvailable = true;
+    slotStatus.classList.remove("is-warning");
     timeWheels.style.display = "none";
     hourWheel.innerHTML = "";
     minuteWheel.innerHTML = "";
@@ -154,11 +197,12 @@
 
         var anyAfterHours = data.slots.some(function (s) { return s.afterHours; });
         var afterHoursFeeValue = anyAfterHours ? data.slots.find(function (s) { return s.afterHours; }).fee : 0;
-        slotStatus.textContent = anyAfterHours
+        state.baseHint = anyAfterHours
           ? "Scroll to any hour and minute. Times outside our normal hours carry a +R" + afterHoursFeeValue + " after-hours fee."
           : "Scroll to any hour and minute.";
+        slotStatus.textContent = state.baseHint;
 
-        timeWheels.style.display = "flex";
+        timeWheels.style.display = "block";
         renderHourWheel();
       })
       .catch(function () {
@@ -172,31 +216,37 @@
       .map(function (h) {
         var hasAvailable = state.slotsByHour[h].some(function (s) { return s.available; });
         return (
-          '<button type="button" class="slot-btn" data-hour="' + h + '"' + (hasAvailable ? "" : " disabled") + ">" +
+          '<button type="button" class="slot-btn' + (hasAvailable ? "" : " is-unavailable") + '" data-hour="' + h + '">' +
           '<span class="slot-time">' + h + "</span></button>"
         );
       })
       .join("");
 
-    hourWheel.querySelectorAll(".slot-btn:not(:disabled)").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        hourWheel.querySelectorAll(".slot-btn").forEach(function (b) { b.classList.remove("is-selected"); });
-        btn.classList.add("is-selected");
-        state.selectedHour = btn.getAttribute("data-hour");
-        state.time = null;
-        renderMinuteWheel();
-        renderSummary();
-      });
+    var items = hourWheel.querySelectorAll(".slot-btn");
+    items.forEach(function (btn, i) {
+      btn.addEventListener("click", function () { scrollWheelTo(hourWheel, i, true); });
     });
 
-    var defaultHour = hours.find(function (h) { return state.slotsByHour[h].some(function (s) { return s.available; }); });
-    if (defaultHour) {
-      var defaultBtn = hourWheel.querySelector('.slot-btn[data-hour="' + defaultHour + '"]');
-      defaultBtn.classList.add("is-selected");
-      state.selectedHour = defaultHour;
-      defaultBtn.scrollIntoView({ block: "center" });
-      renderMinuteWheel();
+    function applySelection(idx) {
+      items.forEach(function (el, i) { el.classList.toggle("is-selected", i === idx); });
     }
+
+    attachWheel(hourWheel, hours.length, applySelection, function (idx) {
+      applySelection(idx);
+      var hour = hours[idx];
+      if (hour !== state.selectedHour) {
+        state.selectedHour = hour;
+        renderMinuteWheel();
+        renderSummary();
+      }
+    });
+
+    var defaultIdx = hours.findIndex(function (h) { return state.slotsByHour[h].some(function (s) { return s.available; }); });
+    if (defaultIdx === -1) defaultIdx = 0;
+    state.selectedHour = hours[defaultIdx];
+    applySelection(defaultIdx);
+    scrollWheelTo(hourWheel, defaultIdx, false);
+    renderMinuteWheel();
   }
 
   function renderMinuteWheel() {
@@ -208,27 +258,42 @@
       .map(function (s) {
         var mm = s.time.slice(3, 5);
         return (
-          '<button type="button" class="slot-btn' + (s.afterHours ? " slot-btn--after-hours" : "") + '" data-time="' + s.time + '" data-resolved="' + (s.resolvedBarberId || "") + '" data-after-hours="' + (s.afterHours ? "1" : "0") + '" data-fee="' + (s.fee || 0) + '"' +
-          (s.available ? "" : " disabled") + '><span class="slot-time">' + mm + "</span>" +
+          '<button type="button" class="slot-btn' + (s.afterHours ? " slot-btn--after-hours" : "") + (s.available ? "" : " is-unavailable") +
+          '" data-time="' + s.time + '" data-resolved="' + (s.resolvedBarberId || "") + '" data-after-hours="' + (s.afterHours ? "1" : "0") +
+          '" data-fee="' + (s.fee || 0) + '" data-available="' + (s.available ? "1" : "0") + '">' +
+          '<span class="slot-time">' + mm + "</span>" +
           (s.afterHours ? '<span class="slot-fee">+R' + s.fee + "</span>" : "") + "</button>"
         );
       })
       .join("");
 
-    minuteWheel.querySelectorAll(".slot-btn:not(:disabled)").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        minuteWheel.querySelectorAll(".slot-btn").forEach(function (b) { b.classList.remove("is-selected"); });
-        btn.classList.add("is-selected");
-        state.time = btn.getAttribute("data-time");
-        state.resolvedBarberId = btn.getAttribute("data-resolved") || null;
-        state.afterHours = btn.getAttribute("data-after-hours") === "1";
-        state.afterHoursFee = Number(btn.getAttribute("data-fee")) || 0;
-        renderSummary();
-      });
+    var items = minuteWheel.querySelectorAll(".slot-btn");
+    items.forEach(function (btn, i) {
+      btn.addEventListener("click", function () { scrollWheelTo(minuteWheel, i, true); });
     });
 
-    var firstAvailable = minuteWheel.querySelector(".slot-btn:not(:disabled)");
-    if (firstAvailable) firstAvailable.scrollIntoView({ block: "center" });
+    function applySelection(idx) {
+      items.forEach(function (el, i) { el.classList.toggle("is-selected", i === idx); });
+    }
+
+    function commit(idx) {
+      applySelection(idx);
+      var btn = items[idx];
+      state.time = btn.getAttribute("data-time");
+      state.resolvedBarberId = btn.getAttribute("data-resolved") || null;
+      state.afterHours = btn.getAttribute("data-after-hours") === "1";
+      state.afterHoursFee = Number(btn.getAttribute("data-fee")) || 0;
+      state.timeAvailable = btn.getAttribute("data-available") === "1";
+      renderSummary();
+      updateAvailabilityWarning();
+    }
+
+    attachWheel(minuteWheel, minutes.length, applySelection, commit);
+
+    var defaultIdx = minutes.findIndex(function (s) { return s.available; });
+    if (defaultIdx === -1) defaultIdx = 0;
+    scrollWheelTo(minuteWheel, defaultIdx, false);
+    commit(defaultIdx);
   }
 
   function money(n) { return "R" + n; }
@@ -277,6 +342,7 @@
     if (!state.barberId) errors.push("Please choose a barber.");
     if (!state.date) errors.push("Please choose a date.");
     if (!state.time) errors.push("Please choose a time slot.");
+    else if (!state.timeAvailable) errors.push("That time is already booked. Please scroll to another time.");
     if (!name || name.length < 2) errors.push("Please enter your full name.");
     if (!/^\S+@\S+\.\S+$/.test(email)) errors.push("Please enter a valid email address.");
     if (phone.replace(/\D/g, "").length < 7) errors.push("Please enter a valid phone number.");

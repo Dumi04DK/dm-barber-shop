@@ -548,13 +548,24 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .option-card .photo { width: 100%; height: 96px; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
 .option-card .photo img { width: 100%; height: 100%; object-fit: cover; }
 
-.time-wheels {
+/* Center-snap wheel picker, like a native iOS time picker: items scroll
+   past a fixed highlighted band in the middle, and whichever item lands
+   there is the selected value — no separate click needed, though clicking
+   an item also jumps it to center. */
+:root {
+  --wheel-item-h: 44px;
+  --wheel-height: 220px; /* 5 rows: 2 above, 1 centered, 2 below */
+}
+.time-wheels { max-width: 320px; margin: 0 auto; }
+.wheel-labels {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   gap: 6px;
+  margin-bottom: 8px;
 }
-.wheel-col { width: 130px; }
+.wheel-labels .wheel-label { width: 130px; }
+.wheel-labels .wheel-label-spacer { width: 20px; }
 .wheel-label {
   display: block;
   text-align: center;
@@ -562,61 +573,88 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: rgba(28,43,57,0.5);
-  margin-bottom: 8px;
+}
+.wheel-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.wheel-highlight {
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: var(--wheel-item-h);
+  border-top: 1px solid rgba(166,67,45,0.35);
+  border-bottom: 1px solid rgba(166,67,45,0.35);
+  background: rgba(166,67,45,0.05);
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 0;
 }
 .wheel-colon {
   font-family: var(--font-display);
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   color: var(--navy);
-  padding-top: 40px;
+  position: relative;
+  z-index: 1;
 }
 .wheel {
-  max-height: 230px;
+  position: relative;
+  z-index: 1;
+  width: 130px;
+  height: var(--wheel-height);
   overflow-y: auto;
-  scroll-snap-type: y proximity;
-  border: 1px solid rgba(28,43,57,0.16);
+  overscroll-behavior: contain;
+  scroll-snap-type: y mandatory;
   border-radius: var(--radius-md);
   background: var(--white);
-  padding: 4px;
+  border: 1px solid rgba(28,43,57,0.14);
+  padding: calc((var(--wheel-height) - var(--wheel-item-h)) / 2) 0;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);
 }
-.wheel::-webkit-scrollbar { width: 6px; }
-.wheel::-webkit-scrollbar-track { background: transparent; }
-.wheel::-webkit-scrollbar-thumb { background: rgba(28,43,57,0.2); border-radius: 4px; }
+.wheel::-webkit-scrollbar { display: none; }
 .slot-btn {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row;
+  align-items: baseline;
   justify-content: center;
-  gap: 2px;
+  gap: 6px;
   width: 100%;
-  padding: 10px 6px;
+  height: var(--wheel-item-h);
+  flex: none;
+  padding: 0 6px;
   border: none;
-  border-bottom: 1px solid rgba(28,43,57,0.08);
   background: transparent;
   font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--navy);
-  text-align: center;
-  scroll-snap-align: start;
-  border-radius: var(--radius-sm);
-}
-.slot-btn:last-child { border-bottom: none; }
-.slot-btn:hover:not(:disabled):not(.is-selected) { background: rgba(201,162,39,0.1); }
-.slot-btn.is-selected { background: var(--rust); color: var(--white); }
-.slot-btn .slot-time { font-family: var(--font-display); }
-.slot-btn .slot-fee { font-size: 0.68rem; font-weight: 700; color: var(--gold); letter-spacing: 0.02em; }
-.slot-btn.is-selected .slot-fee { color: rgba(255,255,255,0.85); }
-.slot-btn--after-hours { background: rgba(201,162,39,0.05); }
-.slot-btn--after-hours.is-selected { background: var(--rust); }
-.slot-btn:disabled {
+  font-size: 1rem;
   color: rgba(28,43,57,0.35);
-  cursor: not-allowed;
+  text-align: center;
+  scroll-snap-align: center;
+  transition: color 0.15s ease, font-size 0.15s ease;
 }
-.slot-btn:disabled .slot-time { text-decoration: line-through; }
-.slot-btn:disabled .slot-fee { color: rgba(28,43,57,0.3); }
+.slot-btn:hover:not(.is-unavailable) { color: var(--rust); }
+.slot-btn.is-selected {
+  color: var(--navy);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.slot-btn .slot-time { font-family: var(--font-display); }
+.slot-btn .slot-fee { font-size: 0.62rem; font-weight: 700; color: var(--gold); letter-spacing: 0.02em; align-self: center; }
+.slot-btn--after-hours { color: rgba(201,162,39,0.75); }
+.slot-btn--after-hours.is-selected { color: var(--rust); }
+.slot-btn.is-unavailable { color: rgba(28,43,57,0.25); }
+.slot-btn.is-unavailable .slot-time { text-decoration: line-through; }
+.slot-btn.is-unavailable.is-selected { color: #a83226; }
 .slot-status { font-size: 0.85rem; color: rgba(28,43,57,0.6); margin: 10px 0 0; text-align: center; }
+.slot-status.is-warning { color: #a83226; font-weight: 600; }
 @media (max-width: 480px) {
-  .wheel-col { width: 104px; }
+  .wheel { width: 108px; }
+  .wheel-labels .wheel-label { width: 108px; }
 }
 
 .booking-shell {
