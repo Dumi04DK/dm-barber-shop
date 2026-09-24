@@ -10,9 +10,10 @@ const SHOP = {
   facebook: "https://facebook.com/dmbarbershop",
   tiktok: "https://tiktok.com/@dmbarbershop",
   timezoneOffsetMinutes: 120, // Africa/Johannesburg, UTC+2, no DST
+  afterHoursFee: 50, // ZAR surcharge for bookings outside normal hours
 };
 
-// 0 = Sunday ... 6 = Saturday. null = closed.
+// Normal, no-surcharge hours. 0 = Sunday ... 6 = Saturday. null = no normal hours that day.
 const HOURS = {
   0: null,
   1: null,
@@ -22,6 +23,10 @@ const HOURS = {
   5: { open: "09:00", close: "19:00" },
   6: { open: "08:00", close: "17:00" },
 };
+
+// Customers can book any day, any time within this wider window — an
+// after-hours fee applies whenever a booking falls outside HOURS above.
+const BOOKING_WINDOW = { open: "06:00", close: "22:00" };
 
 const HOURS_DISPLAY = [
   { label: "Monday", value: "Closed" },
@@ -80,4 +85,4 @@ const BARBERS = [
   },
 ];
 
-module.exports = { SHOP, HOURS, HOURS_DISPLAY, SERVICES, BARBERS };
+module.exports = { SHOP, HOURS, BOOKING_WINDOW, HOURS_DISPLAY, SERVICES, BARBERS };

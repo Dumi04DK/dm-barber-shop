@@ -565,6 +565,10 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .slot-btn:hover:not(:disabled) { border-color: var(--gold); }
 .slot-btn.is-selected { background: var(--rust); border-color: var(--rust); color: var(--white); }
+.slot-btn--after-hours { border-color: rgba(201,162,39,0.5); background: rgba(201,162,39,0.06); }
+.slot-btn--after-hours.is-selected { background: var(--rust); border-color: var(--rust); }
+.slot-btn small { display: block; font-size: 0.68rem; font-weight: 700; color: var(--gold); }
+.slot-btn.is-selected small { color: rgba(255,255,255,0.85); }
 .slot-btn:disabled {
   background: rgba(28,43,57,0.06);
   color: rgba(28,43,57,0.35);
@@ -728,11 +732,30 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
    ========================================================================== */
 .text-center { text-align: center; }
 .mt-0 { margin-top: 0; }
-.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
-.reveal.is-visible { opacity: 1; transform: translateY(0); }
+/* Scroll-reveal animation removed: it could leave content stuck at low
+   opacity depending on scroll speed/timing, which read as a bug rather
+   than a flourish. Content now renders fully visible immediately. */
 
 @media (max-width: 620px) {
   .section { padding: 60px 0; }
   .cta-banner { padding: 40px 24px; }
   .booking-panel { padding-inline: 20px; }
 }
+
+/* ==========================================================================
+   Contrast fixes
+   .service-card / .testimonial are always white/light cards, even when a
+   dark section (.section--dark/.section--navy) wraps them, so their text
+   must not inherit that section's light-on-dark palette. Declared last so
+   these win any equal-specificity conflicts with the section rules above.
+   Headings on a custom dark background (modal, admin gate) need an explicit
+   color too: the global h1-h4 rule targets them directly, so inheriting the
+   dark background's color never applies.
+   ========================================================================== */
+.service-card h3 { color: var(--navy); }
+.service-card p { color: rgba(28,43,57,0.6); }
+.testimonial .who strong { color: var(--navy); }
+.testimonial .who span { color: rgba(28,43,57,0.55); }
+.nav-cta .btn-gold { color: var(--charcoal); }
+.modal-banner h3 { color: var(--white); }
+.admin-gate h2 { color: var(--white); }

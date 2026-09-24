@@ -22,8 +22,9 @@ function customerHTML(booking) {
             ${row("Service", booking.service.name)}
             ${row("Barber", booking.barber.name)}
             ${row("Date", formatDate(booking.startISO))}
-            ${row("Time", booking.time)}
-            ${row("Total", money(booking.service.price))}
+            ${row("Time", booking.time + (booking.service.afterHours ? " (after-hours)" : ""))}
+            ${booking.service.afterHoursFee ? row("After-hours fee", money(booking.service.afterHoursFee)) : ""}
+            ${row("Total", money(booking.service.totalPrice))}
             ${row("Location", booking.shop.address)}
           </table>
           <p style="color:#555;font-size:14px;">A calendar invite is attached to this email — open it to add the appointment to Apple Calendar, Outlook or Google Calendar.</p>
@@ -40,7 +41,8 @@ function adminHTML(booking) {
       <table style="border-collapse:collapse;">
         ${row("Barber", booking.barber.name)}
         ${row("Date", formatDate(booking.startISO))}
-        ${row("Time", booking.time)}
+        ${row("Time", booking.time + (booking.service.afterHours ? " (after-hours)" : ""))}
+        ${row("Total", money(booking.service.totalPrice) + (booking.service.afterHoursFee ? ` (incl. R${booking.service.afterHoursFee} after-hours fee)` : ""))}
         ${row("Customer", booking.customer.name)}
         ${row("Phone", booking.customer.phone)}
         ${row("Email", booking.customer.email)}

@@ -22,6 +22,7 @@ exports.handler = async (event) => {
   for (const { key: date } of blobs) {
     const bookings = (await store.get(date, { type: "json" })) || [];
     for (const b of bookings) {
+      const basePrice = serviceById[b.serviceId] ? serviceById[b.serviceId].price : null;
       all.push({
         id: b.id,
         date: b.date,
@@ -33,6 +34,9 @@ exports.handler = async (event) => {
         email: b.email,
         phone: b.phone,
         notes: b.notes,
+        afterHours: !!b.afterHours,
+        afterHoursFee: b.afterHoursFee || 0,
+        totalPrice: b.totalPrice != null ? b.totalPrice : basePrice,
         createdAt: b.createdAt,
       });
     }

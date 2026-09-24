@@ -1,4 +1,4 @@
-const { HOURS, SHOP } = require("./data");
+const { HOURS, BOOKING_WINDOW, SHOP } = require("./data");
 
 const SLOT_STEP = 15; // minutes
 const BUFFER = 10; // minutes gap kept between back-to-back appointments
@@ -38,25 +38,22 @@ function overlaps(startA, durA, startB, durB) {
 }
 
 // Returns { closed, reason, times: number[] } — candidate start times in minutes-from-midnight,
-// independent of which barber ends up assigned.
+// independent of which barber ends up assigned. Any day/time within BOOKING_WINDOW is bookable;
+// isAfterHours() below determines whether a given time carries the after-hours surcharge.
 function candidateTimes(dateStr, durationMin) {
   if (!isValidDateString(dateStr)) {
     return { closed: true, reason: "Invalid date.", times: [] };
   }
-  const weekday = weekdayOf(dateStr);
-  const hours = HOURS[weekday];
-  if (!hours) {
-    return { closed: true, reason: "We're closed on this day.", times: [] };
-  }
 
-  const open = timeToMinutes(hours.open);
-  const close = timeToMinutes(hours.close);
   const now = shopNow();
   const isToday = dateStr === now.dateStr;
   const isPast = dateStr < now.dateStr;
   if (isPast) {
     return { closed: true, reason: "That date has passed.", times: [] };
   }
+
+  const open = timeToMinutes(BOOKING_WINDOW.open);
+  const close = timeToMinutes(BOOKING_WINDOW.close);
 
   const times = [];
   for (let t = open; t + durationMin <= close; t += SLOT_STEP) {
@@ -65,6 +62,16 @@ function candidateTimes(dateStr, durationMin) {
   }
 
   return { closed: false, reason: null, times };
+}
+
+// True if a booking starting at startMin (for durationMin) falls outside the shop's
+// normal, no-surcharge hours for that day of the week.
+function isAfterHours(dateStr, startMin, durationMin) {
+  const hours = HOURS[weekdayOf(dateStr)];
+  if (!hours) return true; // no normal hours at all that day (e.g. Sun/Mon)
+  const open = timeToMinutes(hours.open);
+  const close = timeToMinutes(hours.close);
+  return startMin < open || startMin + durationMin > close;
 }
 
 function hasConflict(existingBookings, barberId, startMin, durationMin) {
@@ -81,6 +88,7 @@ module.exports = {
   shopNow,
   overlaps,
   candidateTimes,
+  isAfterHours,
   hasConflict,
   BUFFER,
   MIN_NOTICE,

@@ -1,6 +1,6 @@
 const { getStore } = require("@netlify/blobs");
-const { SERVICES, BARBERS } = require("../lib/data");
-const { candidateTimes, hasConflict, minutesToTime, isValidDateString } = require("../lib/slots");
+const { SHOP, SERVICES, BARBERS } = require("../lib/data");
+const { candidateTimes, isAfterHours, hasConflict, minutesToTime, isValidDateString } = require("../lib/slots");
 
 exports.handler = async (event) => {
   const { date, serviceId, barberId } = event.queryStringParameters || {};
@@ -26,11 +26,24 @@ exports.handler = async (event) => {
   const existingBookings = (await store.get(date, { type: "json" })) || [];
 
   const slots = times.map((t) => {
+    const afterHours = isAfterHours(date, t, service.duration);
+    const fee = afterHours ? SHOP.afterHoursFee : 0;
     if (barber) {
-      return { time: minutesToTime(t), available: !hasConflict(existingBookings, barber.id, t, service.duration) };
+      return {
+        time: minutesToTime(t),
+        available: !hasConflict(existingBookings, barber.id, t, service.duration),
+        afterHours,
+        fee,
+      };
     }
     const freeBarber = BARBERS.find((b) => !hasConflict(existingBookings, b.id, t, service.duration));
-    return { time: minutesToTime(t), available: !!freeBarber, resolvedBarberId: freeBarber ? freeBarber.id : null };
+    return {
+      time: minutesToTime(t),
+      available: !!freeBarber,
+      resolvedBarberId: freeBarber ? freeBarber.id : null,
+      afterHours,
+      fee,
+    };
   });
 
   return json(200, { closed: false, reason: null, slots });

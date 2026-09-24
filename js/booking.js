@@ -22,6 +22,8 @@
     date: null,
     time: null,
     resolvedBarberId: null, // when barberId === "any", which barber the server would assign
+    afterHours: false,
+    afterHoursFee: 0,
   };
 
   var todayStr = new Date().toISOString().slice(0, 10);
@@ -134,12 +136,15 @@
           slotStatus.textContent = "No times left on that day. Try another date.";
           return;
         }
-        slotStatus.textContent = "";
+        var anyAfterHours = data.slots.some(function (s) { return s.afterHours; });
+        slotStatus.textContent = anyAfterHours
+          ? "Times outside our normal hours (marked +R" + data.slots.find(function (s) { return s.afterHours; }).fee + ") carry an after-hours fee."
+          : "";
         slotGrid.innerHTML = data.slots
           .map(function (s) {
             return (
-              '<button type="button" class="slot-btn" data-time="' + s.time + '" data-resolved="' + (s.resolvedBarberId || "") + '"' +
-              (s.available ? "" : " disabled") + ">" + s.time + "</button>"
+              '<button type="button" class="slot-btn' + (s.afterHours ? " slot-btn--after-hours" : "") + '" data-time="' + s.time + '" data-resolved="' + (s.resolvedBarberId || "") + '" data-after-hours="' + (s.afterHours ? "1" : "0") + '" data-fee="' + (s.fee || 0) + '"' +
+              (s.available ? "" : " disabled") + ">" + s.time + (s.afterHours ? ' <small style="opacity:.7;">+R' + s.fee + "</small>" : "") + "</button>"
             );
           })
           .join("");
@@ -149,6 +154,8 @@
             btn.classList.add("is-selected");
             state.time = btn.getAttribute("data-time");
             state.resolvedBarberId = btn.getAttribute("data-resolved") || null;
+            state.afterHours = btn.getAttribute("data-after-hours") === "1";
+            state.afterHoursFee = Number(btn.getAttribute("data-fee")) || 0;
             renderSummary();
           });
         });
@@ -167,14 +174,17 @@
     var barberLabel = state.barberId === "any" ? "Any available barber" : (barber ? barber.name : "—");
     var dateLabel = state.date ? formatDateLabel(state.date) : "—";
 
+    var total = service ? service.price + (state.time && state.afterHours ? state.afterHoursFee : 0) : 0;
+
     summary.innerHTML =
       '<h3>Your Appointment</h3>' +
       summaryLine("Service", service ? service.name : "—") +
       summaryLine("Barber", state.barberId ? barberLabel : "—") +
       summaryLine("Date", dateLabel) +
-      summaryLine("Time", state.time || "—") +
+      summaryLine("Time", state.time ? state.time + (state.afterHours ? " (after-hours)" : "") : "—") +
       summaryLine("Duration", service ? service.duration + " min" : "—") +
-      '<div class="summary-total"><span>Total</span><span>' + (service ? money(service.price) : "R0") + "</span></div>";
+      (state.time && state.afterHours ? summaryLine("After-hours fee", money(state.afterHoursFee)) : "") +
+      '<div class="summary-total"><span>Total</span><span>' + money(total) + "</span></div>";
   }
 
   function summaryLine(label, value) {
@@ -277,8 +287,9 @@
       detailRow("Service", booking.service.name) +
       detailRow("Barber", booking.barber.name) +
       detailRow("Date", dateLabel) +
-      detailRow("Time", timeLabel) +
-      detailRow("Total", "R" + booking.service.price) +
+      detailRow("Time", timeLabel + (booking.service.afterHours ? " (after-hours)" : "")) +
+      (booking.service.afterHoursFee ? detailRow("After-hours fee", "R" + booking.service.afterHoursFee) : "") +
+      detailRow("Total", "R" + booking.service.totalPrice) +
       detailRow("Location", booking.shop.address) +
       "</div>" +
       '<div class="cal-actions">' +

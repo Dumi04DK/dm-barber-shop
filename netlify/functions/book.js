@@ -1,6 +1,6 @@
 const { getStore } = require("@netlify/blobs");
 const { SHOP, SERVICES, BARBERS } = require("../lib/data");
-const { candidateTimes, hasConflict, timeToMinutes, isValidDateString } = require("../lib/slots");
+const { candidateTimes, isAfterHours, hasConflict, timeToMinutes, isValidDateString } = require("../lib/slots");
 const { sendBookingEmails } = require("../lib/email");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -54,6 +54,10 @@ exports.handler = async (event) => {
     return json(409, { error: "That barber is already booked for that time. Please pick another slot." });
   }
 
+  const afterHours = isAfterHours(date, startMin, service.duration);
+  const afterHoursFee = afterHours ? SHOP.afterHoursFee : 0;
+  const totalPrice = service.price + afterHoursFee;
+
   const id = (globalThis.crypto && globalThis.crypto.randomUUID) ? globalThis.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const booking = {
     id,
@@ -62,6 +66,9 @@ exports.handler = async (event) => {
     date,
     time,
     duration: service.duration,
+    afterHours,
+    afterHoursFee,
+    totalPrice,
     name: name.trim(),
     email: email.trim(),
     phone: phone.trim(),
@@ -84,7 +91,15 @@ exports.handler = async (event) => {
     endISO: endUTC.toISOString(),
     customer: { name: booking.name, email: booking.email, phone: booking.phone },
     notes: booking.notes,
-    service: { id: service.id, name: service.name, price: service.price, duration: service.duration },
+    service: {
+      id: service.id,
+      name: service.name,
+      price: service.price,
+      duration: service.duration,
+      afterHours,
+      afterHoursFee,
+      totalPrice,
+    },
     barber: { id: assignedBarber.id, name: assignedBarber.name },
     shop: { name: SHOP.name, address: SHOP.address, phone: SHOP.phoneDisplay, email: SHOP.email },
   };

@@ -75,10 +75,11 @@
         return (
           "<tr>" +
           "<td>" + b.date + "</td>" +
-          "<td>" + b.time + "</td>" +
+          "<td>" + b.time + (b.afterHours ? ' <span style="color:var(--rust-light);font-size:0.75rem;">(after-hours)</span>' : "") + "</td>" +
           "<td>" + escapeHTML(b.service) + "</td>" +
           "<td>" + escapeHTML(b.barber) + "</td>" +
           "<td>" + escapeHTML(b.customerName) + "</td>" +
+          "<td>R" + b.totalPrice + (b.afterHoursFee ? ' <span style="color:rgba(245,240,230,0.5);font-size:0.75rem;">(+R' + b.afterHoursFee + ")</span>" : "") + "</td>" +
           "<td><a style=\"color:var(--gold-light);\" href=\"tel:" + escapeHTML(b.phone) + "\">" + escapeHTML(b.phone) + "</a></td>" +
           "<td><a style=\"color:var(--gold-light);\" href=\"mailto:" + escapeHTML(b.email) + "\">" + escapeHTML(b.email) + "</a></td>" +
           '<td class="notes">' + escapeHTML(b.notes || "—") + "</td>" +
@@ -89,7 +90,7 @@
 
     content.innerHTML =
       '<table class="admin-table"><thead><tr>' +
-      "<th>Date</th><th>Time</th><th>Service</th><th>Barber</th><th>Customer</th><th>Phone</th><th>Email</th><th>Notes</th>" +
+      "<th>Date</th><th>Time</th><th>Service</th><th>Barber</th><th>Customer</th><th>Price</th><th>Phone</th><th>Email</th><th>Notes</th>" +
       "</tr></thead><tbody>" + rows + "</tbody></table>";
   }
 
