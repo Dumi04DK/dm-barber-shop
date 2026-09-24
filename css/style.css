@@ -548,34 +548,49 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .option-card .photo { width: 100%; height: 96px; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
 .option-card .photo img { width: 100%; height: 100%; object-fit: cover; }
 
-.slot-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 10px;
-}
-.slot-btn {
-  padding: 12px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(28,43,57,0.18);
+.slot-scroller {
+  max-height: 264px;
+  overflow-y: auto;
+  scroll-snap-type: y proximity;
+  border: 1px solid rgba(28,43,57,0.16);
+  border-radius: var(--radius-md);
   background: var(--white);
+  padding: 4px;
+}
+.slot-scroller::-webkit-scrollbar { width: 8px; }
+.slot-scroller::-webkit-scrollbar-track { background: transparent; }
+.slot-scroller::-webkit-scrollbar-thumb { background: rgba(28,43,57,0.2); border-radius: 4px; }
+.slot-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 18px;
+  border: none;
+  border-bottom: 1px solid rgba(28,43,57,0.08);
+  background: transparent;
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   color: var(--navy);
-  text-align: center;
+  text-align: left;
+  scroll-snap-align: start;
+  border-radius: var(--radius-sm);
 }
-.slot-btn:hover:not(:disabled) { border-color: var(--gold); }
-.slot-btn.is-selected { background: var(--rust); border-color: var(--rust); color: var(--white); }
-.slot-btn--after-hours { border-color: rgba(201,162,39,0.5); background: rgba(201,162,39,0.06); }
-.slot-btn--after-hours.is-selected { background: var(--rust); border-color: var(--rust); }
-.slot-btn small { display: block; font-size: 0.68rem; font-weight: 700; color: var(--gold); }
-.slot-btn.is-selected small { color: rgba(255,255,255,0.85); }
+.slot-btn:last-child { border-bottom: none; }
+.slot-btn:hover:not(:disabled):not(.is-selected) { background: rgba(201,162,39,0.1); }
+.slot-btn.is-selected { background: var(--rust); color: var(--white); }
+.slot-btn .slot-time { font-family: var(--font-display); }
+.slot-btn .slot-fee { font-size: 0.72rem; font-weight: 700; color: var(--gold); letter-spacing: 0.02em; }
+.slot-btn.is-selected .slot-fee { color: rgba(255,255,255,0.85); }
+.slot-btn--after-hours { background: rgba(201,162,39,0.05); }
+.slot-btn--after-hours.is-selected { background: var(--rust); }
 .slot-btn:disabled {
-  background: rgba(28,43,57,0.06);
   color: rgba(28,43,57,0.35);
-  text-decoration: line-through;
   cursor: not-allowed;
-  border-style: dashed;
 }
+.slot-btn:disabled .slot-time { text-decoration: line-through; }
+.slot-btn:disabled .slot-fee { color: rgba(28,43,57,0.3); }
 .slot-status { font-size: 0.85rem; color: rgba(28,43,57,0.6); margin: 10px 0 0; }
 
 .booking-shell {

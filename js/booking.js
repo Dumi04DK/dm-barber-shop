@@ -144,7 +144,8 @@
           .map(function (s) {
             return (
               '<button type="button" class="slot-btn' + (s.afterHours ? " slot-btn--after-hours" : "") + '" data-time="' + s.time + '" data-resolved="' + (s.resolvedBarberId || "") + '" data-after-hours="' + (s.afterHours ? "1" : "0") + '" data-fee="' + (s.fee || 0) + '"' +
-              (s.available ? "" : " disabled") + ">" + s.time + (s.afterHours ? ' <small style="opacity:.7;">+R' + s.fee + "</small>" : "") + "</button>"
+              (s.available ? "" : " disabled") + '><span class="slot-time">' + s.time + "</span>" +
+              (s.afterHours ? '<span class="slot-fee">+R' + s.fee + "</span>" : "") + "</button>"
             );
           })
           .join("");
@@ -159,6 +160,8 @@
             renderSummary();
           });
         });
+        var firstAvailable = slotGrid.querySelector(".slot-btn:not(:disabled)");
+        if (firstAvailable) firstAvailable.scrollIntoView({ block: "center" });
       })
       .catch(function () {
         slotStatus.textContent = "Couldn't load times right now. Please try again.";
