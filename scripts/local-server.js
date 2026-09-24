@@ -22,6 +22,11 @@ class FakeRedis {
     const prefix = pattern.replace(/\*$/, "");
     return [...store.keys()].filter((k) => k.startsWith(prefix));
   }
+  async incr(key) {
+    const next = (store.get(key) || 0) + 1;
+    store.set(key, next);
+    return next;
+  }
 }
 
 const fakeUpstash = { Redis: { fromEnv: () => new FakeRedis() } };

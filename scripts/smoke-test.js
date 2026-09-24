@@ -16,6 +16,11 @@ class FakeRedis {
     const prefix = pattern.replace(/\*$/, "");
     return [...store.keys()].filter((k) => k.startsWith(prefix));
   }
+  async incr(key) {
+    const next = (store.get(key) || 0) + 1;
+    store.set(key, next);
+    return next;
+  }
 }
 
 Module.prototype.require = function (id) {
@@ -134,6 +139,27 @@ async function main() {
   });
   assert(badBook.statusCode === 400, "bad email rejected (400)", badBook.statusCode);
   console.log("OK — validation rejected bad input");
+
+  console.log("\n=== 11. Loyalty reward — 5th booking for the same email gets 15% off ===");
+  const loyalEmail = "loyal.customer@example.com";
+  let lastBooking;
+  for (let visit = 1; visit <= 5; visit++) {
+    const time = ["12:00", "13:00", "14:00", "15:00", "16:00"][visit - 1];
+    const r = await call(bookFn, {
+      method: "POST",
+      body: { serviceId: "classic-cut", barberId: "karabo", date: testDate, time, name: "Loyal Customer", email: loyalEmail, phone: "0821230000" },
+    });
+    assert(r.statusCode === 201, "visit " + visit + " booked (201)", r.statusCode, r.body);
+    assert(r.body.booking.visitNumber === visit, "visit number is " + visit, r.body.booking.visitNumber);
+    lastBooking = r.body.booking;
+    if (visit < 5) {
+      assert(r.body.booking.service.loyaltyDiscount === 0, "no discount before 5th visit", r.body.booking.service);
+    }
+  }
+  assert(lastBooking.service.loyaltyDiscountPercent === 15, "5th visit gets 15% off", lastBooking.service);
+  assert(lastBooking.service.loyaltyDiscount === Math.round(150 * 0.15), "discount amount is 15% of R150", lastBooking.service.loyaltyDiscount);
+  assert(lastBooking.service.totalPrice === 150 - Math.round(150 * 0.15), "total reflects discount", lastBooking.service.totalPrice);
+  console.log("OK — visits 1-4 full price, visit 5 got R" + lastBooking.service.loyaltyDiscount + " off (total R" + lastBooking.service.totalPrice + ")");
 
   console.log("\nALL SMOKE TESTS PASSED");
 }

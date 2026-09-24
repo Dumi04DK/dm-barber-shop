@@ -187,7 +187,8 @@
       summaryLine("Time", state.time ? state.time + (state.afterHours ? " (after-hours)" : "") : "—") +
       summaryLine("Duration", service ? service.duration + " min" : "—") +
       (state.time && state.afterHours ? summaryLine("After-hours fee", money(state.afterHoursFee)) : "") +
-      '<div class="summary-total"><span>Total</span><span>' + money(total) + "</span></div>";
+      '<div class="summary-total"><span>Total</span><span>' + money(total) + "</span></div>" +
+      '<p style="font-size:0.78rem;color:rgba(245,240,230,0.55);margin:14px 0 0;">Loyalty reward: every ' + state.catalog.shop.loyaltyMilestoneEvery + "th visit earns " + state.catalog.shop.loyaltyDiscountPercent + "% off, applied automatically.</p>";
   }
 
   function summaryLine(label, value) {
@@ -278,20 +279,26 @@
     var timeLabel = booking.time;
     var gcalUrl = buildGoogleCalendarUrl(booking);
     var confirmationLine = (emailStatus && emailStatus.customerSent)
-      ? "<p>A confirmation email with your calendar invite has been sent to <strong>" + escapeHTML(booking.customer.email) + "</strong>.</p>"
+      ? "<p>A confirmation email with your receipt and calendar invite has been sent to <strong>" + escapeHTML(booking.customer.email) + "</strong>.</p>"
       : "<p>Your appointment is booked and the shop has been notified. Please save these details — add the appointment to your calendar below.</p>";
+    var loyaltyLine = booking.service.loyaltyDiscount
+      ? '<p style="color:var(--rust);font-weight:600;">This is your visit #' + booking.visitNumber + ' with us — enjoy ' + booking.service.loyaltyDiscountPercent + '% off as our loyalty reward!</p>'
+      : "";
 
     return (
       '<div class="confirmation">' +
       '<div class="check">' + checkIcon() + "</div>" +
       "<h2>You're Booked!</h2>" +
       confirmationLine +
+      loyaltyLine +
       '<div class="details">' +
       detailRow("Service", booking.service.name) +
       detailRow("Barber", booking.barber.name) +
       detailRow("Date", dateLabel) +
       detailRow("Time", timeLabel + (booking.service.afterHours ? " (after-hours)" : "")) +
-      (booking.service.afterHoursFee ? detailRow("After-hours fee", "R" + booking.service.afterHoursFee) : "") +
+      detailRow("Service price", "R" + booking.service.price) +
+      (booking.service.afterHoursFee ? detailRow("After-hours fee", "+R" + booking.service.afterHoursFee) : "") +
+      (booking.service.loyaltyDiscount ? detailRow("Loyalty discount (" + booking.service.loyaltyDiscountPercent + "%)", "-R" + booking.service.loyaltyDiscount) : "") +
       detailRow("Total", "R" + booking.service.totalPrice) +
       detailRow("Location", booking.shop.address) +
       "</div>" +

@@ -78,8 +78,11 @@
           "<td>" + b.time + (b.afterHours ? ' <span style="color:var(--rust-light);font-size:0.75rem;">(after-hours)</span>' : "") + "</td>" +
           "<td>" + escapeHTML(b.service) + "</td>" +
           "<td>" + escapeHTML(b.barber) + "</td>" +
-          "<td>" + escapeHTML(b.customerName) + "</td>" +
-          "<td>R" + b.totalPrice + (b.afterHoursFee ? ' <span style="color:rgba(245,240,230,0.5);font-size:0.75rem;">(+R' + b.afterHoursFee + ")</span>" : "") + "</td>" +
+          "<td>" + escapeHTML(b.customerName) + (b.visitNumber ? ' <span style="color:rgba(245,240,230,0.5);font-size:0.75rem;">(visit #' + b.visitNumber + ")</span>" : "") + "</td>" +
+          "<td>R" + b.totalPrice +
+            (b.afterHoursFee ? ' <span style="color:rgba(245,240,230,0.5);font-size:0.75rem;">(+R' + b.afterHoursFee + " after-hours)</span>" : "") +
+            (b.loyaltyDiscount ? ' <span style="color:var(--gold-light);font-size:0.75rem;">(-R' + b.loyaltyDiscount + " loyalty)</span>" : "") +
+            "</td>" +
           "<td><a style=\"color:var(--gold-light);\" href=\"tel:" + escapeHTML(b.phone) + "\">" + escapeHTML(b.phone) + "</a></td>" +
           "<td><a style=\"color:var(--gold-light);\" href=\"mailto:" + escapeHTML(b.email) + "\">" + escapeHTML(b.email) + "</a></td>" +
           '<td class="notes">' + escapeHTML(b.notes || "—") + "</td>" +

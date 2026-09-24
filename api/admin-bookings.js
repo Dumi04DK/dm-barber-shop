@@ -38,6 +38,8 @@ module.exports = async (req, res) => {
         notes: b.notes,
         afterHours: !!b.afterHours,
         afterHoursFee: b.afterHoursFee || 0,
+        visitNumber: b.visitNumber || null,
+        loyaltyDiscount: b.loyaltyDiscount || 0,
         totalPrice: b.totalPrice != null ? b.totalPrice : basePrice,
         createdAt: b.createdAt,
       });

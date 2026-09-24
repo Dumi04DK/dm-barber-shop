@@ -1,6 +1,6 @@
 const { SHOP, SERVICES, BARBERS } = require("../lib/data");
 const { candidateTimes, isAfterHours, hasConflict, timeToMinutes, isValidDateString } = require("../lib/slots");
-const { getBookingsForDate, setBookingsForDate } = require("../lib/store");
+const { getBookingsForDate, setBookingsForDate, incrCustomerVisits } = require("../lib/store");
 const { sendBookingEmails } = require("../lib/email");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -54,7 +54,18 @@ module.exports = async (req, res) => {
 
   const afterHours = isAfterHours(date, startMin, service.duration);
   const afterHoursFee = afterHours ? SHOP.afterHoursFee : 0;
-  const totalPrice = service.price + afterHoursFee;
+
+  // Loyalty tracking is a bonus on top of the booking, never a reason to fail it.
+  let visitNumber = null;
+  try {
+    visitNumber = await incrCustomerVisits(email);
+  } catch (e) {
+    /* loyalty tracking unavailable — booking still proceeds without a discount */
+  }
+  const isLoyaltyMilestone = !!visitNumber && visitNumber % SHOP.loyaltyMilestoneEvery === 0;
+  const loyaltyDiscountPercent = isLoyaltyMilestone ? SHOP.loyaltyDiscountPercent : 0;
+  const loyaltyDiscount = Math.round((service.price * loyaltyDiscountPercent) / 100);
+  const totalPrice = service.price - loyaltyDiscount + afterHoursFee;
 
   const id = (globalThis.crypto && globalThis.crypto.randomUUID) ? globalThis.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const booking = {
@@ -66,6 +77,9 @@ module.exports = async (req, res) => {
     duration: service.duration,
     afterHours,
     afterHoursFee,
+    visitNumber,
+    loyaltyDiscountPercent,
+    loyaltyDiscount,
     totalPrice,
     name: name.trim(),
     email: email.trim(),
@@ -100,10 +114,13 @@ module.exports = async (req, res) => {
       duration: service.duration,
       afterHours,
       afterHoursFee,
+      loyaltyDiscountPercent,
+      loyaltyDiscount,
       totalPrice,
     },
     barber: { id: assignedBarber.id, name: assignedBarber.name },
     shop: { name: SHOP.name, address: SHOP.address, phone: SHOP.phoneDisplay, email: SHOP.email },
+    visitNumber,
   };
 
   const emailStatus = await sendBookingEmails(bookingPayload);
