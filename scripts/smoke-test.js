@@ -48,10 +48,12 @@ function call(fn, req) {
   });
 }
 
+// UTC-based throughout (matches lib/slots.js's weekdayOf), so this can't
+// pick a mismatched calendar day depending on the machine's local timezone.
 function nextWeekday(targetDow) {
   const d = new Date();
-  d.setDate(d.getDate() + 1);
-  while (d.getDay() !== targetDow) d.setDate(d.getDate() + 1);
+  d.setUTCDate(d.getUTCDate() + 1);
+  while (d.getUTCDay() !== targetDow) d.setUTCDate(d.getUTCDate() + 1);
   return d.toISOString().slice(0, 10);
 }
 

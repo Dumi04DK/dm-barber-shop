@@ -122,35 +122,7 @@
                 <span class="field-hint">Any day, any time. A R50 after-hours fee applies outside our normal hours (Tue&ndash;Fri 9am&ndash;7pm, Sat 8am&ndash;5pm).</span>
               </div>
             </div>
-            <div class="time-wheels" id="time-wheels" style="display:none;">
-              <div class="wheel-labels">
-                <span class="wheel-label">Hour</span>
-                <span class="wheel-label-spacer"></span>
-                <span class="wheel-label">Minute</span>
-              </div>
-              <div class="wheel-wrap" id="wheel-wrap">
-                <div class="wheel-highlight" aria-hidden="true"></div>
-                <div class="wheel-col">
-                  <button type="button" class="wheel-nudge" data-target="hour-wheel" data-dir="-1" aria-label="Earlier hour">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg>
-                  </button>
-                  <div class="wheel" id="hour-wheel"></div>
-                  <button type="button" class="wheel-nudge" data-target="hour-wheel" data-dir="1" aria-label="Later hour">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-                  </button>
-                </div>
-                <div class="wheel-colon">:</div>
-                <div class="wheel-col">
-                  <button type="button" class="wheel-nudge" data-target="minute-wheel" data-dir="-1" aria-label="Earlier minute">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg>
-                  </button>
-                  <div class="wheel" id="minute-wheel"></div>
-                  <button type="button" class="wheel-nudge" data-target="minute-wheel" data-dir="1" aria-label="Later minute">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
+            <div class="time-list" id="time-list" style="display:none;"></div>
             <p class="slot-status" id="slot-status">Choose a service, a barber and a date to see open times.</p>
           </div>
 

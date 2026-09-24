@@ -557,143 +557,50 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .option-card .photo { width: 100%; height: 96px; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
 .option-card .photo img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Center-snap wheel picker, like a native iOS time picker: items scroll
-   past a fixed highlighted band in the middle, and whichever item lands
-   there is the selected value — no separate click needed, though clicking
-   an item also jumps it to center. */
-:root {
-  --wheel-item-h: 44px;
-  --wheel-height: 220px; /* 5 rows: 2 above, 1 centered, 2 below */
-}
-.time-wheels { max-width: 320px; margin: 0 auto; }
-.wheel-labels {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-.wheel-labels .wheel-label { width: 130px; }
-.wheel-labels .wheel-label-spacer { width: 20px; }
-.wheel-label {
-  display: block;
-  text-align: center;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(28,43,57,0.5);
-}
-.wheel-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-.wheel-highlight {
-  position: absolute;
-  left: 0; right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  height: var(--wheel-item-h);
-  border-top: 1px solid rgba(166,67,45,0.35);
-  border-bottom: 1px solid rgba(166,67,45,0.35);
-  background: rgba(166,67,45,0.05);
-  border-radius: 6px;
-  pointer-events: none;
-  z-index: 0;
-}
-.wheel-colon {
-  font-family: var(--font-display);
-  font-size: 1.6rem;
-  color: var(--navy);
-  position: relative;
-  z-index: 1;
-  align-self: center;
-}
-.wheel-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-  z-index: 1;
-}
-.wheel-nudge {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid rgba(28,43,57,0.16);
-  background: var(--white);
-  color: var(--navy);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-}
-.wheel-nudge svg { width: 16px; height: 16px; }
-.wheel-nudge:hover { border-color: var(--gold); color: var(--rust); }
-.wheel-nudge:active { transform: scale(0.94); }
-.wheel {
-  position: relative;
-  z-index: 1;
-  width: 130px;
-  height: var(--wheel-height);
+/* Simple scrollable time list, the same pattern Google Calendar/Teams use
+   for picking a meeting time: one plain vertically-scrolling panel, native
+   browser scrolling (no custom snap/wheel mechanics to fight), click a row
+   to select it. */
+.time-list {
+  max-width: 280px;
+  margin: 0 auto;
+  max-height: 280px;
   overflow-y: auto;
-  overscroll-behavior: contain;
-  /* proximity, not mandatory: mandatory forces a hard snap on every wheel
-     tick, which fights continuous mouse-wheel scrolling over a long list
-     (feels like it "won't scroll through" the numbers). Proximity still
-     snaps near a rest position but doesn't fight scrolling in between. */
-  scroll-snap-type: y proximity;
-  scroll-behavior: auto;
   border-radius: var(--radius-md);
   background: var(--white);
   border: 1px solid rgba(28,43,57,0.14);
-  padding: calc((var(--wheel-height) - var(--wheel-item-h)) / 2) 0;
-  scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);
 }
-.wheel::-webkit-scrollbar { display: none; }
 .slot-btn {
   display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  justify-content: center;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   width: 100%;
-  height: var(--wheel-item-h);
-  flex: none;
-  padding: 0 6px;
+  padding: 12px 18px;
   border: none;
+  border-bottom: 1px solid rgba(28,43,57,0.08);
   background: transparent;
   font-weight: 600;
-  font-size: 1rem;
-  color: rgba(28,43,57,0.35);
-  text-align: center;
-  scroll-snap-align: center;
-  transition: color 0.15s ease, font-size 0.15s ease;
-}
-.slot-btn:hover:not(.is-unavailable) { color: var(--rust); }
-.slot-btn.is-selected {
+  font-size: 0.95rem;
   color: var(--navy);
-  font-size: 1.25rem;
-  font-weight: 700;
+  text-align: left;
 }
+.slot-btn:last-child { border-bottom: none; }
+.slot-btn:hover:not(.is-unavailable) { background: rgba(201,162,39,0.1); }
+.slot-btn.is-selected { background: var(--rust); color: var(--white); }
 .slot-btn .slot-time { font-family: var(--font-display); }
-.slot-btn .slot-fee { font-size: 0.62rem; font-weight: 700; color: var(--gold); letter-spacing: 0.02em; align-self: center; }
-.slot-btn--after-hours { color: rgba(201,162,39,0.75); }
-.slot-btn--after-hours.is-selected { color: var(--rust); }
-.slot-btn.is-unavailable { color: rgba(28,43,57,0.25); }
+.slot-btn .slot-fee { font-size: 0.72rem; font-weight: 700; color: var(--gold); letter-spacing: 0.02em; }
+.slot-btn.is-selected .slot-fee { color: rgba(255,255,255,0.85); }
+.slot-btn--after-hours { background: rgba(201,162,39,0.05); }
+.slot-btn--after-hours.is-selected { background: var(--rust); }
+.slot-btn.is-unavailable {
+  color: rgba(28,43,57,0.35);
+  cursor: not-allowed;
+}
 .slot-btn.is-unavailable .slot-time { text-decoration: line-through; }
-.slot-btn.is-unavailable.is-selected { color: #a83226; }
+.slot-btn.is-unavailable .slot-fee { color: rgba(28,43,57,0.3); }
 .slot-status { font-size: 0.85rem; color: rgba(28,43,57,0.6); margin: 10px 0 0; text-align: center; }
 .slot-status.is-warning { color: #a83226; font-weight: 600; }
-@media (max-width: 480px) {
-  .wheel { width: 108px; }
-  .wheel-labels .wheel-label { width: 108px; }
-}
 
 .booking-shell {
   display: grid;
