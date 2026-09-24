@@ -7,11 +7,37 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    # GitHub-hosted runner — zero setup required. Swap to a self-hosted
-    # runner by changing this to `runs-on: self-hosted` once one is
-    # registered under Settings -> Actions -> Runners for this repo.
+  checks:
+    # GitHub-hosted runner — free, zero setup. Swap to `runs-on: self-hosted`
+    # once a self-hosted runner is registered under Settings -> Actions ->
+    # Runners for this repo.
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        check:
+          - name: Booking API smoke test
+            run: node scripts/smoke-test.js
+          - name: Server modules load without error
+            run: node scripts/ci-check-modules-load.js
+          - name: HTML tags are balanced
+            run: node scripts/ci-check-html-balance.js
+          - name: No broken internal links
+            run: node scripts/ci-check-links.js
+          - name: No broken image references
+            run: node scripts/ci-check-images.js
+          - name: No committed secrets or real .env files
+            run: node scripts/ci-check-secrets.js
+          - name: .env.example documents required variables
+            run: node scripts/ci-check-env-example.js
+          - name: No committed test screenshots
+            run: |
+              if git ls-files | grep -qE '^scripts/shots/'; then
+                echo "Found committed screenshot artifacts under scripts/shots/ — these should never be tracked." >&2
+                exit 1
+              fi
+              echo "OK — no test artifacts tracked"
+    name: ${{ matrix.check.name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -22,12 +48,5 @@ jobs:
 
       - run: npm ci
 
-      - name: Booking API smoke test
-        run: node scripts/smoke-test.js
-
-      - name: Check no leftover debug/test artifacts are tracked
-        run: |
-          if git ls-files | grep -qE '^scripts/shots/'; then
-            echo "Found committed screenshot artifacts under scripts/shots/ — these should never be tracked." >&2
-            exit 1
-          fi
+      - name: ${{ matrix.check.name }}
+        run: ${{ matrix.check.run }}
