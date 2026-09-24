@@ -1,6 +1,7 @@
 const { getStore } = require("@netlify/blobs");
 const { SHOP, SERVICES, BARBERS } = require("../lib/data");
 const { candidateTimes, hasConflict, timeToMinutes, isValidDateString } = require("../lib/slots");
+const { sendBookingEmails } = require("../lib/email");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -75,20 +76,25 @@ exports.handler = async (event) => {
   const startUTC = new Date(startShiftedGuess - SHOP.timezoneOffsetMinutes * 60000);
   const endUTC = new Date(startUTC.getTime() + service.duration * 60000);
 
+  const bookingPayload = {
+    id: booking.id,
+    date,
+    time,
+    startISO: startUTC.toISOString(),
+    endISO: endUTC.toISOString(),
+    customer: { name: booking.name, email: booking.email, phone: booking.phone },
+    notes: booking.notes,
+    service: { id: service.id, name: service.name, price: service.price, duration: service.duration },
+    barber: { id: assignedBarber.id, name: assignedBarber.name },
+    shop: { name: SHOP.name, address: SHOP.address, phone: SHOP.phoneDisplay, email: SHOP.email },
+  };
+
+  const emailStatus = await sendBookingEmails(bookingPayload);
+
   return json(201, {
     success: true,
-    booking: {
-      id: booking.id,
-      date,
-      time,
-      startISO: startUTC.toISOString(),
-      endISO: endUTC.toISOString(),
-      customer: { name: booking.name, email: booking.email, phone: booking.phone },
-      notes: booking.notes,
-      service: { id: service.id, name: service.name, price: service.price, duration: service.duration },
-      barber: { id: assignedBarber.id, name: assignedBarber.name },
-      shop: { name: SHOP.name, address: SHOP.address, phone: SHOP.phoneDisplay, email: SHOP.email },
-    },
+    booking: bookingPayload,
+    emailStatus,
   });
 };
 

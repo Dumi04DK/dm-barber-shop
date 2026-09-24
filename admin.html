@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Bookings | D.M Barber Shop</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  body { background: var(--charcoal); }
+  .admin-shell { max-width: 1100px; margin: 0 auto; padding: 48px 24px 80px; }
+  .admin-header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:32px; flex-wrap:wrap; }
+  .admin-header h1 { color: var(--white); margin:0; font-size:1.6rem; }
+  .admin-gate { max-width:380px; margin:80px auto; background:var(--charcoal-card); border-radius:var(--radius-lg); padding:36px; color:var(--cream); text-align:center; }
+  .admin-gate input { width:100%; padding:12px 14px; border-radius:8px; border:1px solid var(--line); background:rgba(245,240,230,0.06); color:var(--white); margin:16px 0; }
+  .admin-table-wrap { background:var(--charcoal-card); border-radius:var(--radius-lg); overflow:auto; }
+  table.admin-table { width:100%; border-collapse:collapse; color:var(--cream); font-size:0.9rem; }
+  table.admin-table th { text-align:left; padding:14px 16px; background:rgba(245,240,230,0.06); color:var(--gold-light); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap; }
+  table.admin-table td { padding:12px 16px; border-top:1px solid var(--line); white-space:nowrap; }
+  table.admin-table td.notes { white-space:normal; max-width:220px; color:rgba(245,240,230,0.7); }
+  .admin-empty { padding:60px 20px; text-align:center; color:rgba(245,240,230,0.6); }
+  .admin-toolbar { display:flex; gap:12px; align-items:center; }
+</style>
+</head>
+<body>
+
+<div class="admin-shell">
+  <div id="admin-gate" class="admin-gate">
+    <h2 style="margin-top:0;">Staff Sign In</h2>
+    <p style="color:rgba(245,240,230,0.7);font-size:0.9rem;">Enter the staff access key to view upcoming bookings.</p>
+    <input type="password" id="admin-key-input" placeholder="Access key" autocomplete="off">
+    <button class="btn btn-gold btn-block" id="admin-signin">View Bookings</button>
+    <p id="admin-gate-error" style="color:#e08a75;font-size:0.85rem;margin-top:14px;display:none;"></p>
+  </div>
+
+  <div id="admin-app" style="display:none;">
+    <div class="admin-header">
+      <h1>Upcoming Bookings</h1>
+      <div class="admin-toolbar">
+        <label style="color:var(--cream-dim);font-size:0.85rem;display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="admin-show-past"> Show past bookings
+        </label>
+        <button class="btn btn-outline" style="color:#f5f0e6;" id="admin-refresh">Refresh</button>
+        <button class="btn btn-outline" style="color:#f5f0e6;" id="admin-signout">Sign Out</button>
+      </div>
+    </div>
+    <div id="admin-content" class="admin-table-wrap"></div>
+  </div>
+</div>
+
+<script src="js/admin.js"></script>
+</body>
+</html>

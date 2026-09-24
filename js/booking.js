@@ -237,7 +237,7 @@
           }
           return;
         }
-        showConfirmation(res.data.booking);
+        showConfirmation(res.data.booking, res.data.emailStatus || {});
       })
       .catch(function () {
         submitBtn.disabled = false;
@@ -246,10 +246,10 @@
       });
   });
 
-  function showConfirmation(booking) {
+  function showConfirmation(booking, emailStatus) {
     bookingPanel.style.display = "none";
     confirmationPanel.style.display = "block";
-    confirmationPanel.innerHTML = buildConfirmationHTML(booking);
+    confirmationPanel.innerHTML = buildConfirmationHTML(booking, emailStatus);
     confirmationPanel.querySelector("[data-action='ics']").addEventListener("click", function () {
       downloadICS(booking);
     });
@@ -259,17 +259,20 @@
     confirmationPanel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function buildConfirmationHTML(booking) {
+  function buildConfirmationHTML(booking, emailStatus) {
     var start = new Date(booking.startISO);
     var dateLabel = start.toLocaleDateString("en-ZA", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "Africa/Johannesburg" });
     var timeLabel = booking.time;
     var gcalUrl = buildGoogleCalendarUrl(booking);
+    var confirmationLine = (emailStatus && emailStatus.customerSent)
+      ? "<p>A confirmation email with your calendar invite has been sent to <strong>" + escapeHTML(booking.customer.email) + "</strong>.</p>"
+      : "<p>Your appointment is booked and the shop has been notified. Please save these details — add the appointment to your calendar below.</p>";
 
     return (
       '<div class="confirmation">' +
       '<div class="check">' + checkIcon() + "</div>" +
       "<h2>You're Booked!</h2>" +
-      "<p>A confirmation has been sent to <strong>" + escapeHTML(booking.customer.email) + "</strong>. We'll see you soon.</p>" +
+      confirmationLine +
       '<div class="details">' +
       detailRow("Service", booking.service.name) +
       detailRow("Barber", booking.barber.name) +

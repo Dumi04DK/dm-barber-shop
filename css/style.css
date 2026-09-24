@@ -208,19 +208,23 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   display: flex;
   align-items: center;
   color: var(--cream);
-  background: linear-gradient(180deg, rgba(18,18,18,0.55) 0%, rgba(18,18,18,0.78) 55%, var(--charcoal) 100%), var(--charcoal);
+  background: var(--charcoal);
   overflow: hidden;
 }
-.hero::after {
-  content: "";
+.hero-media {
   position: absolute; inset: 0;
-  background-image: var(--hero-image);
   background-size: cover;
   background-position: center 30%;
   opacity: 0.55;
   z-index: 0;
 }
-.hero .container { position: relative; z-index: 1; }
+.hero::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(18,18,18,0.55) 0%, rgba(18,18,18,0.78) 55%, var(--charcoal) 100%);
+  z-index: 1;
+}
+.hero .container { position: relative; z-index: 2; }
 .hero-content { max-width: 680px; padding: 60px 0; }
 .hero-content .eyebrow { color: var(--gold-light); }
 .hero-content h1 {
@@ -427,13 +431,26 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
    Page hero (interior pages)
    ========================================================================== */
 .page-hero {
-  background: linear-gradient(180deg, rgba(18,18,18,0.75), rgba(18,18,18,0.9)), var(--hero-image, none);
-  background-size: cover;
-  background-position: center;
+  position: relative;
   color: var(--white);
   padding: 100px 0 64px;
   text-align: center;
+  overflow: hidden;
+  background: var(--charcoal);
 }
+.page-hero-media {
+  position: absolute; inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+.page-hero::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(18,18,18,0.75), rgba(18,18,18,0.9));
+  z-index: 1;
+}
+.page-hero .container { position: relative; z-index: 2; }
 .page-hero .eyebrow { justify-content: center; color: var(--gold-light); }
 .page-hero h1 { color: var(--white); font-size: clamp(2rem, 4.4vw, 3.1rem); }
 .page-hero p { color: rgba(245,240,230,0.78); max-width: 560px; margin: 0 auto; }

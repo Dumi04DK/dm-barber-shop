@@ -23,6 +23,10 @@ const fakeBlobs = {
         bucket[key] = JSON.stringify(value);
         buckets.set(name, bucket);
       },
+      async list() {
+        const bucket = buckets.get(name) || {};
+        return { blobs: Object.keys(bucket).map((k) => ({ key: k })) };
+      },
     };
   },
 };
@@ -34,6 +38,9 @@ Module.prototype.require = function (id) {
 const catalogFn = require("../netlify/functions/catalog");
 const availabilityFn = require("../netlify/functions/availability");
 const bookFn = require("../netlify/functions/book");
+const adminBookingsFn = require("../netlify/functions/admin-bookings");
+
+process.env.ADMIN_KEY = process.env.ADMIN_KEY || "localtest";
 
 const ROOT = path.join(__dirname, "..");
 const PORT = process.env.PORT || 5500;
@@ -71,6 +78,8 @@ const server = http.createServer(async (req, res) => {
       } else if (url.pathname === "/api/book") {
         const body = await readBody(req);
         result = await bookFn.handler({ httpMethod: "POST", body });
+      } else if (url.pathname === "/api/admin-bookings") {
+        result = await adminBookingsFn.handler({ queryStringParameters: qs, headers: req.headers });
       } else {
         result = { statusCode: 404, body: JSON.stringify({ error: "Unknown API route" }) };
       }
