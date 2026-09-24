@@ -269,6 +269,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 
 .service-card {
+  position: relative;
   background: var(--white);
   border-radius: var(--radius-md);
   padding: 28px;
@@ -291,7 +292,12 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .service-card .icon svg { width: 22px; height: 22px; }
 .service-row {
   display: flex; align-items: baseline; justify-content: space-between;
-  gap: 12px; margin-top: 4px;
+  gap: 12px;
+  /* Pins the price row to the bottom of the card regardless of how long
+     the description above it runs, so it lines up across every card in
+     a row instead of floating wherever the text happens to end. */
+  margin-top: auto;
+  padding-top: 4px;
 }
 .service-row .price { font-family: var(--font-display); font-size: 1.3rem; color: var(--rust); white-space: nowrap; }
 .service-meta { font-size: 0.82rem; color: rgba(28,43,57,0.55); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -306,8 +312,11 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   border: 1px solid rgba(201,162,39,0.35);
   padding: 4px 10px;
   border-radius: 999px;
-  margin-bottom: 4px;
-  align-self: flex-start;
+  /* Absolutely positioned so a badge on one card doesn't push its icon
+     and heading down relative to cards without a badge in the same row. */
+  position: absolute;
+  top: 20px;
+  right: 20px;
 }
 
 .barber-card {

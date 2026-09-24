@@ -7,7 +7,7 @@ require("fs").mkdirSync(OUT, { recursive: true });
 (async () => {
   const browser = await chromium.launch({ executablePath: EXE, args: ["--no-sandbox"] });
   const page = await browser.newPage({ viewport: { width: 1280, height: 1400 } });
-  await page.goto("http://localhost:5506/services.html", { waitUntil: "load" });
+  await page.goto("http://localhost:5509/services.html", { waitUntil: "load" });
   await page.addStyleTag({ content: ".modal-overlay{display:none!important;}" });
   const hairGrid = await page.$(".section:not(.section--dark) .grid-4");
   await hairGrid.scrollIntoViewIfNeeded();
