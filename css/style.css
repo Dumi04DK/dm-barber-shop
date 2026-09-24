@@ -548,8 +548,30 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .option-card .photo { width: 100%; height: 96px; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
 .option-card .photo img { width: 100%; height: 100%; object-fit: cover; }
 
-.slot-scroller {
-  max-height: 264px;
+.time-wheels {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+}
+.wheel-col { width: 130px; }
+.wheel-label {
+  display: block;
+  text-align: center;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(28,43,57,0.5);
+  margin-bottom: 8px;
+}
+.wheel-colon {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--navy);
+  padding-top: 40px;
+}
+.wheel {
+  max-height: 230px;
   overflow-y: auto;
   scroll-snap-type: y proximity;
   border: 1px solid rgba(28,43,57,0.16);
@@ -557,23 +579,24 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   background: var(--white);
   padding: 4px;
 }
-.slot-scroller::-webkit-scrollbar { width: 8px; }
-.slot-scroller::-webkit-scrollbar-track { background: transparent; }
-.slot-scroller::-webkit-scrollbar-thumb { background: rgba(28,43,57,0.2); border-radius: 4px; }
+.wheel::-webkit-scrollbar { width: 6px; }
+.wheel::-webkit-scrollbar-track { background: transparent; }
+.wheel::-webkit-scrollbar-thumb { background: rgba(28,43,57,0.2); border-radius: 4px; }
 .slot-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: center;
+  gap: 2px;
   width: 100%;
-  padding: 13px 18px;
+  padding: 10px 6px;
   border: none;
   border-bottom: 1px solid rgba(28,43,57,0.08);
   background: transparent;
   font-weight: 600;
   font-size: 0.95rem;
   color: var(--navy);
-  text-align: left;
+  text-align: center;
   scroll-snap-align: start;
   border-radius: var(--radius-sm);
 }
@@ -581,7 +604,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .slot-btn:hover:not(:disabled):not(.is-selected) { background: rgba(201,162,39,0.1); }
 .slot-btn.is-selected { background: var(--rust); color: var(--white); }
 .slot-btn .slot-time { font-family: var(--font-display); }
-.slot-btn .slot-fee { font-size: 0.72rem; font-weight: 700; color: var(--gold); letter-spacing: 0.02em; }
+.slot-btn .slot-fee { font-size: 0.68rem; font-weight: 700; color: var(--gold); letter-spacing: 0.02em; }
 .slot-btn.is-selected .slot-fee { color: rgba(255,255,255,0.85); }
 .slot-btn--after-hours { background: rgba(201,162,39,0.05); }
 .slot-btn--after-hours.is-selected { background: var(--rust); }
@@ -591,7 +614,10 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .slot-btn:disabled .slot-time { text-decoration: line-through; }
 .slot-btn:disabled .slot-fee { color: rgba(28,43,57,0.3); }
-.slot-status { font-size: 0.85rem; color: rgba(28,43,57,0.6); margin: 10px 0 0; }
+.slot-status { font-size: 0.85rem; color: rgba(28,43,57,0.6); margin: 10px 0 0; text-align: center; }
+@media (max-width: 480px) {
+  .wheel-col { width: 104px; }
+}
 
 .booking-shell {
   display: grid;

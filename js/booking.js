@@ -7,7 +7,9 @@
   var serviceOptions = document.getElementById("service-options");
   var barberOptions = document.getElementById("barber-options");
   var dateInput = document.getElementById("booking-date");
-  var slotGrid = document.getElementById("slot-grid");
+  var timeWheels = document.getElementById("time-wheels");
+  var hourWheel = document.getElementById("hour-wheel");
+  var minuteWheel = document.getElementById("minute-wheel");
   var slotStatus = document.getElementById("slot-status");
   var summary = document.getElementById("booking-summary");
   var submitBtn = document.getElementById("booking-submit");
@@ -24,6 +26,8 @@
     resolvedBarberId: null, // when barberId === "any", which barber the server would assign
     afterHours: false,
     afterHoursFee: 0,
+    slotsByHour: null, // { "06": [{time, available, afterHours, fee, resolvedBarberId}, ...], ... }
+    selectedHour: null,
   };
 
   var todayStr = new Date().toISOString().slice(0, 10);
@@ -111,13 +115,17 @@
   }
 
   function refreshSlots() {
-    if (!slotGrid) return;
+    if (!hourWheel) return;
+    state.slotsByHour = null;
+    state.selectedHour = null;
+    timeWheels.style.display = "none";
+    hourWheel.innerHTML = "";
+    minuteWheel.innerHTML = "";
+
     if (!state.serviceId || !state.barberId || !state.date) {
-      slotGrid.innerHTML = "";
       slotStatus.textContent = "Choose a service, a barber and a date to see open times.";
       return;
     }
-    slotGrid.innerHTML = "";
     slotStatus.textContent = "Loading available times…";
 
     var url =
@@ -136,36 +144,91 @@
           slotStatus.textContent = "No times left on that day. Try another date.";
           return;
         }
-        var anyAfterHours = data.slots.some(function (s) { return s.afterHours; });
-        slotStatus.textContent = anyAfterHours
-          ? "Times outside our normal hours (marked +R" + data.slots.find(function (s) { return s.afterHours; }).fee + ") carry an after-hours fee."
-          : "";
-        slotGrid.innerHTML = data.slots
-          .map(function (s) {
-            return (
-              '<button type="button" class="slot-btn' + (s.afterHours ? " slot-btn--after-hours" : "") + '" data-time="' + s.time + '" data-resolved="' + (s.resolvedBarberId || "") + '" data-after-hours="' + (s.afterHours ? "1" : "0") + '" data-fee="' + (s.fee || 0) + '"' +
-              (s.available ? "" : " disabled") + '><span class="slot-time">' + s.time + "</span>" +
-              (s.afterHours ? '<span class="slot-fee">+R' + s.fee + "</span>" : "") + "</button>"
-            );
-          })
-          .join("");
-        slotGrid.querySelectorAll(".slot-btn:not(:disabled)").forEach(function (btn) {
-          btn.addEventListener("click", function () {
-            slotGrid.querySelectorAll(".slot-btn").forEach(function (b) { b.classList.remove("is-selected"); });
-            btn.classList.add("is-selected");
-            state.time = btn.getAttribute("data-time");
-            state.resolvedBarberId = btn.getAttribute("data-resolved") || null;
-            state.afterHours = btn.getAttribute("data-after-hours") === "1";
-            state.afterHoursFee = Number(btn.getAttribute("data-fee")) || 0;
-            renderSummary();
-          });
+
+        var byHour = {};
+        data.slots.forEach(function (s) {
+          var h = s.time.slice(0, 2);
+          (byHour[h] = byHour[h] || []).push(s);
         });
-        var firstAvailable = slotGrid.querySelector(".slot-btn:not(:disabled)");
-        if (firstAvailable) firstAvailable.scrollIntoView({ block: "center" });
+        state.slotsByHour = byHour;
+
+        var anyAfterHours = data.slots.some(function (s) { return s.afterHours; });
+        var afterHoursFeeValue = anyAfterHours ? data.slots.find(function (s) { return s.afterHours; }).fee : 0;
+        slotStatus.textContent = anyAfterHours
+          ? "Scroll to any hour and minute. Times outside our normal hours carry a +R" + afterHoursFeeValue + " after-hours fee."
+          : "Scroll to any hour and minute.";
+
+        timeWheels.style.display = "flex";
+        renderHourWheel();
       })
       .catch(function () {
         slotStatus.textContent = "Couldn't load times right now. Please try again.";
       });
+  }
+
+  function renderHourWheel() {
+    var hours = Object.keys(state.slotsByHour).sort();
+    hourWheel.innerHTML = hours
+      .map(function (h) {
+        var hasAvailable = state.slotsByHour[h].some(function (s) { return s.available; });
+        return (
+          '<button type="button" class="slot-btn" data-hour="' + h + '"' + (hasAvailable ? "" : " disabled") + ">" +
+          '<span class="slot-time">' + h + "</span></button>"
+        );
+      })
+      .join("");
+
+    hourWheel.querySelectorAll(".slot-btn:not(:disabled)").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        hourWheel.querySelectorAll(".slot-btn").forEach(function (b) { b.classList.remove("is-selected"); });
+        btn.classList.add("is-selected");
+        state.selectedHour = btn.getAttribute("data-hour");
+        state.time = null;
+        renderMinuteWheel();
+        renderSummary();
+      });
+    });
+
+    var defaultHour = hours.find(function (h) { return state.slotsByHour[h].some(function (s) { return s.available; }); });
+    if (defaultHour) {
+      var defaultBtn = hourWheel.querySelector('.slot-btn[data-hour="' + defaultHour + '"]');
+      defaultBtn.classList.add("is-selected");
+      state.selectedHour = defaultHour;
+      defaultBtn.scrollIntoView({ block: "center" });
+      renderMinuteWheel();
+    }
+  }
+
+  function renderMinuteWheel() {
+    minuteWheel.innerHTML = "";
+    if (!state.selectedHour) return;
+    var minutes = state.slotsByHour[state.selectedHour];
+
+    minuteWheel.innerHTML = minutes
+      .map(function (s) {
+        var mm = s.time.slice(3, 5);
+        return (
+          '<button type="button" class="slot-btn' + (s.afterHours ? " slot-btn--after-hours" : "") + '" data-time="' + s.time + '" data-resolved="' + (s.resolvedBarberId || "") + '" data-after-hours="' + (s.afterHours ? "1" : "0") + '" data-fee="' + (s.fee || 0) + '"' +
+          (s.available ? "" : " disabled") + '><span class="slot-time">' + mm + "</span>" +
+          (s.afterHours ? '<span class="slot-fee">+R' + s.fee + "</span>" : "") + "</button>"
+        );
+      })
+      .join("");
+
+    minuteWheel.querySelectorAll(".slot-btn:not(:disabled)").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        minuteWheel.querySelectorAll(".slot-btn").forEach(function (b) { b.classList.remove("is-selected"); });
+        btn.classList.add("is-selected");
+        state.time = btn.getAttribute("data-time");
+        state.resolvedBarberId = btn.getAttribute("data-resolved") || null;
+        state.afterHours = btn.getAttribute("data-after-hours") === "1";
+        state.afterHoursFee = Number(btn.getAttribute("data-fee")) || 0;
+        renderSummary();
+      });
+    });
+
+    var firstAvailable = minuteWheel.querySelector(".slot-btn:not(:disabled)");
+    if (firstAvailable) firstAvailable.scrollIntoView({ block: "center" });
   }
 
   function money(n) { return "R" + n; }
