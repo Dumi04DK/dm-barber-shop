@@ -2,4 +2,6 @@ node_modules/
 .vercel/
 /Images/
 .env
+.env.local
+.env*.local
 *.log
