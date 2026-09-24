@@ -600,7 +600,31 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   color: var(--navy);
   position: relative;
   z-index: 1;
+  align-self: center;
 }
+.wheel-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+.wheel-nudge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(28,43,57,0.16);
+  background: var(--white);
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.wheel-nudge svg { width: 16px; height: 16px; }
+.wheel-nudge:hover { border-color: var(--gold); color: var(--rust); }
+.wheel-nudge:active { transform: scale(0.94); }
 .wheel {
   position: relative;
   z-index: 1;
@@ -608,7 +632,12 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   height: var(--wheel-height);
   overflow-y: auto;
   overscroll-behavior: contain;
-  scroll-snap-type: y mandatory;
+  /* proximity, not mandatory: mandatory forces a hard snap on every wheel
+     tick, which fights continuous mouse-wheel scrolling over a long list
+     (feels like it "won't scroll through" the numbers). Proximity still
+     snaps near a rest position but doesn't fight scrolling in between. */
+  scroll-snap-type: y proximity;
+  scroll-behavior: auto;
   border-radius: var(--radius-md);
   background: var(--white);
   border: 1px solid rgba(28,43,57,0.14);

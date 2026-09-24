@@ -143,6 +143,24 @@
     wheelEl.scrollTo({ top: index * WHEEL_ITEM_H, behavior: smooth ? "smooth" : "auto" });
   }
 
+  // Up/down nudge buttons move exactly one item at a time — a guaranteed,
+  // always-reliable way to step through every value, regardless of how a
+  // particular mouse/trackpad's wheel-scroll happens to behave.
+  document.querySelectorAll(".wheel-nudge").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var wheelEl = document.getElementById(btn.getAttribute("data-target"));
+      var dir = Number(btn.getAttribute("data-dir"));
+      var count = wheelEl.querySelectorAll(".slot-btn").length;
+      if (!count) return;
+      var current = Math.max(0, Math.min(count - 1, Math.round(wheelEl.scrollTop / WHEEL_ITEM_H)));
+      var next = Math.max(0, Math.min(count - 1, current + dir));
+      // Instant, not smooth: an animated scroll can be interrupted by a
+      // fast second click, leaving the committed value out of sync with
+      // what's visually shown. Instant guarantees they always match.
+      scrollWheelTo(wheelEl, next, false);
+    });
+  });
+
   function updateAvailabilityWarning() {
     if (!state.time) return;
     if (!state.timeAvailable) {
@@ -224,7 +242,7 @@
 
     var items = hourWheel.querySelectorAll(".slot-btn");
     items.forEach(function (btn, i) {
-      btn.addEventListener("click", function () { scrollWheelTo(hourWheel, i, true); });
+      btn.addEventListener("click", function () { scrollWheelTo(hourWheel, i, false); });
     });
 
     function applySelection(idx) {
@@ -269,7 +287,7 @@
 
     var items = minuteWheel.querySelectorAll(".slot-btn");
     items.forEach(function (btn, i) {
-      btn.addEventListener("click", function () { scrollWheelTo(minuteWheel, i, true); });
+      btn.addEventListener("click", function () { scrollWheelTo(minuteWheel, i, false); });
     });
 
     function applySelection(idx) {
