@@ -7,7 +7,7 @@
   var serviceOptions = document.getElementById("service-options");
   var barberOptions = document.getElementById("barber-options");
   var dateInput = document.getElementById("booking-date");
-  var timeList = document.getElementById("time-list");
+  var timeInput = document.getElementById("booking-time");
   var slotStatus = document.getElementById("slot-status");
   var summary = document.getElementById("booking-summary");
   var submitBtn = document.getElementById("booking-submit");
@@ -24,6 +24,8 @@
     resolvedBarberId: null, // when barberId === "any", which barber the server would assign
     afterHours: false,
     afterHoursFee: 0,
+    availabilityMap: null, // { "HH:MM": {available, afterHours, fee, resolvedBarberId} }
+    bookingWindow: null, // { open: "06:00", close: "22:00" }
   };
 
   var todayStr = new Date().toISOString().slice(0, 10);
@@ -31,8 +33,13 @@
     dateInput.min = todayStr;
     dateInput.addEventListener("change", function () {
       state.date = dateInput.value;
-      state.time = null;
       refreshSlots();
+      renderSummary();
+    });
+  }
+  if (timeInput) {
+    timeInput.addEventListener("input", function () {
+      evaluateTime();
       renderSummary();
     });
   }
@@ -41,6 +48,11 @@
     .then(function (r) { if (!r.ok) throw new Error("catalog"); return r.json(); })
     .then(function (data) {
       state.catalog = data;
+      state.bookingWindow = data.bookingWindow;
+      if (timeInput && data.bookingWindow) {
+        timeInput.min = data.bookingWindow.open;
+        timeInput.max = data.bookingWindow.close;
+      }
       renderServiceOptions(data.services);
       renderBarberOptions(data.barbers);
       renderSummary();
@@ -110,17 +122,24 @@
     });
   }
 
+  // Fetches every minute-level slot for the chosen service/barber/date and
+  // keeps it as a lookup map, so the customer can type or scroll the native
+  // time input to ANY exact minute and get an instant, accurate answer —
+  // no fixed list of times to pick from.
   function refreshSlots() {
-    if (!timeList) return;
+    if (!timeInput) return;
     state.time = null;
-    timeList.style.display = "none";
-    timeList.innerHTML = "";
+    state.availabilityMap = null;
+    timeInput.value = "";
+    timeInput.disabled = true;
 
     if (!state.serviceId || !state.barberId || !state.date) {
-      slotStatus.textContent = "Choose a service, a barber and a date to see open times.";
+      slotStatus.className = "slot-status";
+      slotStatus.textContent = "Choose a service and a barber, then a date and time.";
       return;
     }
-    slotStatus.textContent = "Loading available times…";
+    slotStatus.className = "slot-status";
+    slotStatus.textContent = "Loading availability…";
 
     var url =
       "/api/availability?date=" + encodeURIComponent(state.date) +
@@ -139,49 +158,50 @@
           return;
         }
 
-        var anyAfterHours = data.slots.some(function (s) { return s.afterHours; });
-        var afterHoursFeeValue = anyAfterHours ? data.slots.find(function (s) { return s.afterHours; }).fee : 0;
-        slotStatus.textContent = anyAfterHours
-          ? "Times outside our normal hours (+R" + afterHoursFeeValue + ") carry an after-hours fee."
-          : "";
-
-        timeList.style.display = "block";
-        renderSlotList(data.slots);
+        var map = {};
+        data.slots.forEach(function (s) { map[s.time] = s; });
+        state.availabilityMap = map;
+        timeInput.disabled = false;
+        slotStatus.textContent = "Set any time between " + state.bookingWindow.open + " and " + state.bookingWindow.close + ". Outside " +
+          "Tue–Fri 9am–7pm / Sat 8am–5pm carries a R" + (data.slots.find(function (s) { return s.afterHours; }) || {}).fee + " after-hours fee.";
       })
       .catch(function () {
-        slotStatus.textContent = "Couldn't load times right now. Please try again.";
+        slotStatus.textContent = "Couldn't load availability right now. Please try again.";
       });
   }
 
-  // A plain scrollable list of times — the same pattern Google Calendar/
-  // Teams use for picking a meeting time. Native browser scrolling, click
-  // a row to select it, already-booked times are shown but not clickable.
-  function renderSlotList(slots) {
-    timeList.innerHTML = slots
-      .map(function (s) {
-        return (
-          '<button type="button" class="slot-btn' + (s.afterHours ? " slot-btn--after-hours" : "") + (s.available ? "" : " is-unavailable") + '"' +
-          ' data-time="' + s.time + '" data-resolved="' + (s.resolvedBarberId || "") + '" data-after-hours="' + (s.afterHours ? "1" : "0") + '" data-fee="' + (s.fee || 0) + '"' +
-          (s.available ? "" : " disabled") + '><span class="slot-time">' + s.time + "</span>" +
-          (s.afterHours ? '<span class="slot-fee">+R' + s.fee + "</span>" : "") + "</button>"
-        );
-      })
-      .join("");
-
-    timeList.querySelectorAll(".slot-btn:not(:disabled)").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        timeList.querySelectorAll(".slot-btn").forEach(function (b) { b.classList.remove("is-selected"); });
-        btn.classList.add("is-selected");
-        state.time = btn.getAttribute("data-time");
-        state.resolvedBarberId = btn.getAttribute("data-resolved") || null;
-        state.afterHours = btn.getAttribute("data-after-hours") === "1";
-        state.afterHoursFee = Number(btn.getAttribute("data-fee")) || 0;
-        renderSummary();
-      });
-    });
-
-    var firstAvailable = timeList.querySelector(".slot-btn:not(:disabled)");
-    if (firstAvailable) firstAvailable.scrollIntoView({ block: "nearest" });
+  // Looks up whatever exact time is currently in the native time input
+  // against the fetched availability map, and updates state + the status
+  // message accordingly. Called whenever the customer changes the time.
+  function evaluateTime() {
+    if (!state.availabilityMap || !timeInput.value) {
+      state.time = null;
+      return;
+    }
+    var entry = state.availabilityMap[timeInput.value];
+    if (!entry) {
+      state.time = null;
+      slotStatus.className = "slot-status is-warning";
+      slotStatus.textContent = "That time is outside our bookable hours (" + state.bookingWindow.open + "–" + state.bookingWindow.close + ") or too soon — please choose another.";
+      return;
+    }
+    if (!entry.available) {
+      state.time = null;
+      slotStatus.className = "slot-status is-warning";
+      slotStatus.textContent = "That exact time is already booked for this barber. Try another time, or “Any Available Barber”.";
+      return;
+    }
+    state.time = entry.time;
+    state.resolvedBarberId = entry.resolvedBarberId || null;
+    state.afterHours = entry.afterHours;
+    state.afterHoursFee = entry.fee || 0;
+    if (entry.afterHours) {
+      slotStatus.className = "slot-status is-after-hours";
+      slotStatus.textContent = "Available — after-hours fee of R" + entry.fee + " applies.";
+    } else {
+      slotStatus.className = "slot-status is-available";
+      slotStatus.textContent = "Available at the standard price.";
+    }
   }
 
   function money(n) { return "R" + n; }
