@@ -618,6 +618,8 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   text-align: center;
   padding: 20px 4px 4px;
 }
+.confirmation h2 { color: var(--navy); }
+.confirmation p { color: rgba(28,43,57,0.7); }
 .confirmation .check {
   width: 68px; height: 68px; border-radius: 50%;
   background: rgba(201,162,39,0.14); color: var(--gold);
@@ -636,6 +638,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .confirmation .details .row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.94rem; border-bottom: 1px dashed rgba(28,43,57,0.14); }
 .confirmation .details .row:last-child { border-bottom: none; }
 .confirmation .details .row span:first-child { color: rgba(28,43,57,0.55); }
+.confirmation .details .row span:last-child { color: var(--navy); font-weight: 600; }
 
 .alert {
   padding: 14px 18px; border-radius: var(--radius-sm);
