@@ -6,7 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const { URL } = require("url");
 
-// Load .env.local by hand (no dotenv dependency) so RESEND_API_KEY, ADMIN_KEY,
+// Load .env.local by hand (no dotenv dependency) so BREVO_API_KEY, ADMIN_KEY,
 // etc. set there are picked up when running this script directly with `node`,
 // same as `vercel dev` would. Real process env vars always win.
 const envLocalPath = path.join(__dirname, "..", ".env.local");
