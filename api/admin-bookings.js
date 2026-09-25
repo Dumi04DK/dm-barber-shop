@@ -1,5 +1,5 @@
 const { SERVICES, BARBERS } = require("../lib/data");
-const { listAllBookings } = require("../lib/store");
+const { listAllBookings, deleteBooking } = require("../lib/store");
 
 module.exports = async (req, res) => {
   const adminKey = process.env.ADMIN_KEY;
@@ -10,6 +10,14 @@ module.exports = async (req, res) => {
   const providedKey = (req.query || {}).key || req.headers["x-admin-key"];
   if (!providedKey || providedKey !== adminKey) {
     return res.status(401).json({ error: "Invalid or missing admin key." });
+  }
+
+  if (req.method === "DELETE") {
+    const id = (req.query || {}).id;
+    if (!id) return res.status(400).json({ error: "Missing booking id." });
+    const removed = await deleteBooking(id);
+    if (!removed) return res.status(404).json({ error: "Booking not found." });
+    return res.status(200).json({ success: true });
   }
 
   const serviceById = Object.fromEntries(SERVICES.map((s) => [s.id, s]));
