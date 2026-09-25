@@ -6,6 +6,22 @@ const fs = require("fs");
 const path = require("path");
 const { URL } = require("url");
 
+// Load .env.local by hand (no dotenv dependency) so RESEND_API_KEY, ADMIN_KEY,
+// etc. set there are picked up when running this script directly with `node`,
+// same as `vercel dev` would. Real process env vars always win.
+const envLocalPath = path.join(__dirname, "..", ".env.local");
+if (fs.existsSync(envLocalPath)) {
+  for (const line of fs.readFileSync(envLocalPath, "utf-8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const value = trimmed.slice(eq + 1).trim();
+    if (key && process.env[key] === undefined) process.env[key] = value;
+  }
+}
+
 const Module = require("module");
 const originalRequire = Module.prototype.require;
 const store = new Map();
