@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 
 const filePath = path.join(__dirname, "..", ".env.example");
-const REQUIRED_KEYS = ["RESEND_API_KEY", "ADMIN_KEY"];
+const REQUIRED_KEYS = ["BREVO_API_KEY", "ADMIN_KEY"];
 
 if (!fs.existsSync(filePath)) {
   console.error(".env.example is missing");

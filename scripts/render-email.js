@@ -1,5 +1,5 @@
 // Renders the email HTML templates to disk for visual inspection, without
-// actually sending anything (no network call to Resend).
+// actually sending anything (no network call to Brevo).
 const path = require("path");
 const fs = require("fs");
 
@@ -17,7 +17,7 @@ global.fetch = async (url, opts) => {
   captured.push(body);
   return { ok: true, json: async () => ({}) };
 };
-process.env.RESEND_API_KEY = "fake-for-render-only";
+process.env.BREVO_API_KEY = "fake-for-render-only";
 
 const booking = {
   id: "abcd1234-ef56-7890-ab12-cd34ef567890",
@@ -42,12 +42,12 @@ const booking = {
   await emailModule.sendBookingEmails(booking);
   global.fetch = originalFetch;
 
-  const customerEmail = captured.find((c) => c.to === booking.customer.email);
-  const adminEmail = captured.find((c) => c.to !== booking.customer.email);
+  const customerEmail = captured.find((c) => c.to[0].email === booking.customer.email);
+  const adminEmail = captured.find((c) => c.to[0].email !== booking.customer.email);
 
   const outDir = path.join(__dirname, "shots");
   fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(path.join(outDir, "email-customer.html"), customerEmail.html);
-  fs.writeFileSync(path.join(outDir, "email-admin.html"), adminEmail.html);
+  fs.writeFileSync(path.join(outDir, "email-customer.html"), customerEmail.htmlContent);
+  fs.writeFileSync(path.join(outDir, "email-admin.html"), adminEmail.htmlContent);
   console.log("Rendered email-customer.html and email-admin.html to scripts/shots/");
 })();
