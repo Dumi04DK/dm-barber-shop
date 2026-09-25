@@ -115,15 +115,18 @@
 
           <div class="booking-step">
             <div class="step-label"><span class="num">3</span> Choose Date &amp; Time</div>
-            <div class="form-grid" style="margin-bottom:16px;">
+            <div class="form-grid">
               <div class="field">
                 <label for="booking-date">Date</label>
                 <input type="date" id="booking-date" required>
-                <span class="field-hint">Any day, any time. A R50 after-hours fee applies outside our normal hours (Tue&ndash;Fri 9am&ndash;7pm, Sat 8am&ndash;5pm).</span>
+              </div>
+              <div class="field">
+                <label for="booking-time">Time</label>
+                <input type="time" id="booking-time" step="60" disabled required>
               </div>
             </div>
-            <div class="time-list" id="time-list" style="display:none;"></div>
-            <p class="slot-status" id="slot-status">Choose a service, a barber and a date to see open times.</p>
+            <span class="field-hint">Any day, any time. Set the hour and minute yourself — a R50 after-hours fee applies outside our normal hours (Tue&ndash;Fri 9am&ndash;7pm, Sat 8am&ndash;5pm).</span>
+            <p class="slot-status" id="slot-status">Choose a service and a barber, then a date and time.</p>
           </div>
 
           <div class="booking-step">

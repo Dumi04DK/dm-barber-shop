@@ -557,49 +557,14 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .option-card .photo { width: 100%; height: 96px; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
 .option-card .photo img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Simple scrollable time list, the same pattern Google Calendar/Teams use
-   for picking a meeting time: one plain vertically-scrolling panel, native
-   browser scrolling (no custom snap/wheel mechanics to fight), click a row
-   to select it. */
-.time-list {
-  max-width: 280px;
-  margin: 0 auto;
-  max-height: 280px;
-  overflow-y: auto;
-  border-radius: var(--radius-md);
-  background: var(--white);
-  border: 1px solid rgba(28,43,57,0.14);
-}
-.slot-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 18px;
-  border: none;
-  border-bottom: 1px solid rgba(28,43,57,0.08);
-  background: transparent;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--navy);
-  text-align: left;
-}
-.slot-btn:last-child { border-bottom: none; }
-.slot-btn:hover:not(.is-unavailable) { background: rgba(201,162,39,0.1); }
-.slot-btn.is-selected { background: var(--rust); color: var(--white); }
-.slot-btn .slot-time { font-family: var(--font-display); }
-.slot-btn .slot-fee { font-size: 0.72rem; font-weight: 700; color: var(--gold); letter-spacing: 0.02em; }
-.slot-btn.is-selected .slot-fee { color: rgba(255,255,255,0.85); }
-.slot-btn--after-hours { background: rgba(201,162,39,0.05); }
-.slot-btn--after-hours.is-selected { background: var(--rust); }
-.slot-btn.is-unavailable {
-  color: rgba(28,43,57,0.35);
-  cursor: not-allowed;
-}
-.slot-btn.is-unavailable .slot-time { text-decoration: line-through; }
-.slot-btn.is-unavailable .slot-fee { color: rgba(28,43,57,0.3); }
-.slot-status { font-size: 0.85rem; color: rgba(28,43,57,0.6); margin: 10px 0 0; text-align: center; }
+/* Native time input: the browser's own hour/minute control (type it,
+   scroll a segment, or use the arrows) — the customer sets the exact
+   hour and minute themselves, and it's left-aligned like every other
+   field in the form instead of a centered custom widget. */
+#booking-time:disabled { background: rgba(28,43,57,0.05); cursor: not-allowed; }
+.slot-status { font-size: 0.9rem; color: rgba(28,43,57,0.6); margin: 12px 0 0; text-align: left; }
+.slot-status.is-available { color: #2f6b3a; font-weight: 600; }
+.slot-status.is-after-hours { color: var(--rust); font-weight: 600; }
 .slot-status.is-warning { color: #a83226; font-weight: 600; }
 
 .booking-shell {
