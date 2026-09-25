@@ -34,7 +34,7 @@ const booking = {
     totalPrice: 203,
   },
   barber: { id: "duma", name: "Duma Mokoena" },
-  shop: { name: "D.M Barber Shop", address: "14 Rivonia Road, Sandton, Johannesburg, 2196", phone: "011 555 0142", email: "hello@dmbarbershop.co.za" },
+  shop: { name: "D.M Barber Shop", address: "14 Rivonia Road, Sandton, Johannesburg, 2196", phone: "063 028 3198", email: "kulukudumisani04@gmail.com" },
   visitNumber: 5,
 };
 

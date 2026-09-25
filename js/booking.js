@@ -58,7 +58,7 @@
       renderSummary();
     })
     .catch(function () {
-      showAlert(formAlert, "We couldn't load live booking options. Please refresh the page, or call us on " + "011 555 0142" + " to book.");
+      showAlert(formAlert, "We couldn't load live booking options. Please refresh the page, or call us on " + "063 028 3198" + " to book.");
     });
 
   function renderServiceOptions(services) {
